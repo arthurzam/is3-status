@@ -1,0 +1,1 @@
+option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing ALSA volume')
