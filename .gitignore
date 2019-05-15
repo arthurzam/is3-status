@@ -1,3 +1,23 @@
-*.user
-_build/
+_build
 build/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.out
+*.exe
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# IDE files
+*.user
