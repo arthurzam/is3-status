@@ -5,6 +5,7 @@ project('is3-status', 'c',
 
 sources = [
   'src/cmd_date.c',
+  'src/cmd_disk_usage.c',
   'src/cmd_eth.c',
   'src/ini_parser.c',
   'src/main.c',

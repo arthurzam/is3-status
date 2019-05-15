@@ -1,6 +1,7 @@
 #include "vprint.h"
 
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 
 int vprint_walk(struct vprint *ctx) {
@@ -23,7 +24,7 @@ int vprint_walk(struct vprint *ctx) {
 		ctx->buffer[1] = '\0';
 		ctx->buffer += 1;
 		ctx->remainingSize -= 1;
-		return n;
+		return vprint_walk(ctx);
 	} else
 		return VPRINT_UNKNOWN_OPT;
 }
@@ -39,14 +40,26 @@ int vprint_strcat(struct vprint *ctx, const char *str) {
 	return VPRINT_EOF;
 }
 
-int vprint_itoa(struct vprint *ctx, int value) {
-	int len = snprintf(ctx->buffer, ctx->remainingSize, "%d", value);
+static int __attribute__((format(printf, 2, 3))) vprint_snprintf(struct vprint *ctx, const char *format, ...) {
+	va_list args;
+	va_start (args, format);
+	int len = vsnprintf(ctx->buffer, ctx->remainingSize, format, args);
+	va_end (args);
+
 	if (len < 0 || (unsigned)len >= ctx->remainingSize)
 		return VPRINT_MISSING_SIZE;
 	ctx->buffer[len] = '\0';
 	ctx->buffer += len;
 	ctx->remainingSize -= (unsigned)len;
 	return VPRINT_EOF;
+}
+
+int vprint_itoa(struct vprint *ctx, int value) {
+	return vprint_snprintf(ctx, "%d", value);
+}
+
+int vprint_dtoa(struct vprint *ctx, double value) {
+	return vprint_snprintf(ctx, "%.02f", value);
 }
 
 void vprint_collect_used(const char *str, uint32_t var_options[8]) {

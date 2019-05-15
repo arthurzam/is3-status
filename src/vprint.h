@@ -21,6 +21,7 @@ enum vprint_output {
 int vprint_walk(struct vprint *ctx);
 int vprint_strcat(struct vprint *ctx, const char *str);
 int vprint_itoa(struct vprint *ctx, int value);
+int vprint_dtoa(struct vprint *ctx, double value);
 void vprint_collect_used(const char *str, uint32_t var_options[8]);
 
 #endif // INI_PARSER_H
