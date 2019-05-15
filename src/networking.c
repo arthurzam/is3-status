@@ -5,13 +5,15 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include <arpa/inet.h>
+#include <netdb.h>
 #include <errno.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <ifaddrs.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <net/if.h>
-#include <unistd.h>
 
 #define FOREACH_RTA(begin,len) \
 	for(struct rtattr *rta = (struct rtattr *)(begin); \
@@ -36,10 +38,23 @@ static void setup_netlink() {
 		.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV4_ROUTE,
 		.nl_pid = (uint32_t)getpid()
 	};
+
 	if (bind (g_net_global.netlink_fd, (struct sockaddr *) &addr, sizeof (addr)) < 0) {
 		fprintf(stderr, "bind(netlink) failed: %s\n", strerror(errno));
 		exit(1);
 	}
+}
+
+static void net_query_info(struct net_if_addrs *curr_if) {
+	struct ifaddrs *list = NULL;
+	getifaddrs(&list);
+	for (struct ifaddrs *iter = list; iter; iter = iter->ifa_next) {
+		if (0 == strcmp(curr_if->if_name, iter->ifa_name)) {
+			curr_if->is_down = (char)((iter->ifa_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
+			getnameinfo(iter->ifa_addr, sizeof(struct sockaddr_in), curr_if->if_ip4, sizeof(curr_if->if_ip4), NULL, 0, NI_NUMERICHOST);
+		}
+	}
+	freeifaddrs(list);
 }
 
 unsigned net_add_if(const char *if_name) {
@@ -52,7 +67,7 @@ unsigned net_add_if(const char *if_name) {
 	curr->if_ip6[0] = '\0';
 	curr->is_down = true;
 
-	// TODO: get info about interface
+	net_query_info(curr);
 
 	if (g_net_global.netlink_fd == -1)
 		setup_netlink();
@@ -148,8 +163,7 @@ void handle_netlink_read() {
 	}
 	if (status == 0) {
 		fprintf(stderr, "netlink_read : EOF\n");
-	}
-	else if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
+	} else if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
 		fprintf(stderr, "recvmsg(netlink) failed: %s\n", strerror(errno));
 	}
 }
