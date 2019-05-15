@@ -3,7 +3,6 @@ project('is3-status', 'c',
     version: '1.0',
     default_options: ['warning_level=3'])
 
-#ide:editable-filelist
 sources = [
   'src/cmd_date.c',
   'src/cmd_eth.c',
@@ -12,6 +11,7 @@ sources = [
   'src/main.c',
   'src/networking.c',
   'src/vprint.c',
+  'src/fdpoll.c'
 ]
 
 #ide:editable-filelist
