@@ -1,8 +1,7 @@
-#include "vprint.h"
-#include "ini_parser.h"
+#include "main.h"
 
+#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <X11/Xlib.h>
 

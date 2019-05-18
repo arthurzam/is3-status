@@ -1,7 +1,9 @@
 #ifndef FDPOLL_H
 #define FDPOLL_H
 
-#include "ini_parser.h"
+#include <stdbool.h>
+
+struct run_instance;
 
 void fdpoll_init(void);
 void fdpoll_add(int fd, void(*func_handle)(void *data), void *data);

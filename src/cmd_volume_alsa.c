@@ -1,4 +1,4 @@
-#include "ini_parser.h"
+#include "main.h"
 #include "vprint.h"
 
 #include <alsa/asoundlib.h>

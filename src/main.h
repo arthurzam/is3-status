@@ -1,10 +1,18 @@
 #ifndef GENERAL_H
 #define GENERAL_H
 
-#include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+
 #include <yajl_gen.h>
+
+extern struct general_settings_t {
+	const char *align;
+	long interval;
+	char color_bad[8];
+	char color_degraded[8];
+	char color_good[8];
+} g_general_settings;
 
 enum cmd_option_type {
 	OPT_TYPE_LONG = 0,

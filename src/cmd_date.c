@@ -1,4 +1,4 @@
-#include "general.h"
+#include "main.h"
 #include "vprint.h"
 
 #include <string.h>

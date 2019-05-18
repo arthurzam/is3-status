@@ -1,9 +1,10 @@
 #include "fdpoll.h"
 #include "networking.h"
+#include "main.h"
+#include "ini_parser.h"
 
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <errno.h>
 #include <fcntl.h>

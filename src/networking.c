@@ -26,7 +26,7 @@ struct net_global_t g_net_global = {
 	.netlink_fd = -1
 };
 
-static void setup_netlink() {
+static void setup_netlink(void) {
 	g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (g_net_global.netlink_fd < 0) {
 		fprintf(stderr, "socket(netlink) failed: %s\n", strerror(errno));
@@ -82,7 +82,7 @@ static struct net_if_addrs *net_find_if(const char *if_name) {
 	return NULL;
 }
 
-void handle_netlink_read() {
+void handle_netlink_read(void) {
 	char buf[4096];
 	struct iovec iov = { buf, sizeof buf };
 	struct sockaddr_nl snl;

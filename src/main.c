@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -8,6 +7,7 @@
 
 #include <yajl_version.h>
 
+#include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
 
