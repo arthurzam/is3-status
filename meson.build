@@ -7,6 +7,7 @@ sources = [
   'src/cmd_date.c',
   'src/cmd_eth.c',
   'src/cmd_x11_language.c',
+  'src/cmd_sway_language.c',
   'src/ini_parser.c',
   'src/main.c',
   'src/networking.c',
