@@ -101,7 +101,14 @@ static void handle_click_event(struct run_instance *runs_begin, struct run_insta
 
 bool fdpoll_run(struct run_instance *runs_begin, struct run_instance *runs_end) {
 	struct pollfd *const fds = g_fdpoll.fds;
+#ifdef PROFILE
+	static int counter = 10000;
+	if ((--counter) == 0)
+		return false;
+	int ret = poll(fds, g_fdpoll.size, 0);
+#else
 	int ret = poll(fds, g_fdpoll.size, 1000);
+#endif
 	if (ret < 0) {
 		fprintf(stderr, "poll failed with %s\n", strerror(errno));
 		return false;
