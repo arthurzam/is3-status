@@ -6,8 +6,6 @@ project('is3-status', 'c',
 sources = [
   'src/cmd_date.c',
   'src/cmd_eth.c',
-  'src/cmd_x11_language.c',
-  'src/cmd_sway_language.c',
   'src/ini_parser.c',
   'src/main.c',
   'src/networking.c',
@@ -28,6 +26,14 @@ if (get_option('alsa').enabled())
     sources += 'src/cmd_volume_alsa.c'
 endif
 
-deps += dependency('x11')
+if (get_option('sway').enabled())
+    sources += 'src/cmd_sway_language.c'
+endif
+
+if (get_option('x11').enabled())
+    deps += dependency('x11')
+    sources += 'src/cmd_x11_language.c'
+endif
+
 
 exe = executable('is3-status', sources, install: true, dependencies: deps)

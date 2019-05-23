@@ -1,1 +1,3 @@
 option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing ALSA volume')
+option('sway', type: 'feature', value: 'auto', description: 'Enable accessing SwayWM\'s modules')
+option('x11', type: 'feature', value: 'auto', description: 'Enable accessing X11\'s modules')
