@@ -20,4 +20,8 @@ struct runs_list {
 struct runs_list ini_parse(FILE *ini);
 void free_all_run_instances(struct runs_list *runs);
 
+#ifdef TESTS
+int test_cmd_array_correct(void);
+#endif
+
 #endif // INI_PARSER_H

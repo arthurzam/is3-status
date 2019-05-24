@@ -1,3 +1,4 @@
 option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing ALSA volume')
+option('tests', type: 'boolean', value: false, description: 'Enable inner tests, not meant for deploying')
 option('sway', type: 'feature', value: 'auto', description: 'Enable accessing SwayWM\'s modules')
 option('x11', type: 'feature', value: 'auto', description: 'Enable accessing X11\'s modules')

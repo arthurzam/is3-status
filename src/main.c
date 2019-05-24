@@ -35,6 +35,10 @@ static void setup_global_settings() {
 
 int main()
 {
+#ifdef TESTS
+	if(!test_cmd_array_correct())
+		return 1;
+#endif
 	FILE *ini = open_config();
 	if (ini == NULL) {
 		fprintf(stderr, "is3-status: Couldn't find config file\n");

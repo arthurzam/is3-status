@@ -17,11 +17,9 @@ extern const struct cmd __start_cmd_array;
 extern const struct cmd __stop_cmd_array;
 
 static const struct cmd *find_cmd(const char *name) {
-	// TODO: add test for (__start_cmd_array - __stop_cmd_array) mod sizeof(struct cmd) equals zero
-	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter) {
+	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter)
 		if (0 == strcmp(name, iter->name))
 			return iter;
-	}
 	return NULL;
 }
 
@@ -195,10 +193,45 @@ _error:
 
 void free_all_run_instances(struct runs_list *runs) {
 	for(struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
-		if (run->vtable->func_destroy)
-			run->vtable->func_destroy(run->data);
+		run->vtable->func_destroy(run->data);
 		free(run->data);
 		free(run->instance);
 	}
 	free(runs->runs_begin);
 }
+
+#ifdef TESTS
+
+int test_cmd_array_correct(void) {
+#define TEST_ERR(...) ((void)fprintf(stderr, __VA_ARGS__), false)
+#define ERR_STR(str) "test_cmd_array_correct: "str"\n"
+	if ((((const char *)&__stop_cmd_array) - ((const char *)&__start_cmd_array)) % sizeof(struct cmd) != 0) {
+		return TEST_ERR(ERR_STR("somehow cmd_array section's pointers are incorrect"));
+	}
+	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter) {
+		if (!iter->name)
+			return TEST_ERR(ERR_STR("empty cmd name"));
+		if (!iter->func_init || !iter->func_destroy || !iter->func_output)
+			return TEST_ERR(ERR_STR("cmd %s: must have function is empty"), iter->name);
+
+		for(unsigned i = 1; i < iter->opts.size; ++i)
+			if (0 <= strcmp(iter->opts.names[i - 1], iter->opts.names[i]))
+				return TEST_ERR(ERR_STR("cmd %s: options not sorted"), iter->name);
+
+		const struct {
+			const char *name;
+			unsigned type;
+		} base_opts[] = {
+			{"align", OPT_TYPE_ALIGN},
+			{"interval", OPT_TYPE_LONG},
+		};
+		for (size_t i = 0; i < sizeof(base_opts) / sizeof(base_opts[0]); ++i) {
+			const struct cmd_option *cmd_option = find_cmd_option(&iter->opts, base_opts[i].name);
+			if(cmd_option && cmd_option->type != base_opts[i].type)
+				return TEST_ERR(ERR_STR("cmd %s: incorrect type for %s"), iter->name, base_opts[i].name);
+		}
+	}
+	return true;
+}
+
+#endif

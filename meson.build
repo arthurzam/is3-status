@@ -35,5 +35,8 @@ if (get_option('x11').enabled())
     sources += 'src/cmd_x11_language.c'
 endif
 
+if (get_option('tests'))
+    add_project_arguments('-DTESTS', language : 'c')
+endif
 
 exe = executable('is3-status', sources, install: true, dependencies: deps)
