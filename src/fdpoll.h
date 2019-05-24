@@ -3,10 +3,10 @@
 
 #include <stdbool.h>
 
-struct run_instance;
+struct runs_list;
 
 void fdpoll_init(void);
 void fdpoll_add(int fd, void(*func_handle)(void *data), void *data);
-bool fdpoll_run(struct run_instance *runs_begin, struct run_instance *runs_end);
+bool fdpoll_run(struct runs_list *runs);
 
 #endif // FDPOLL_H

@@ -40,17 +40,15 @@ int main()
 		fprintf(stderr, "is3-status: Couldn't find config file\n");
 		return 1;
 	}
-	unsigned count = 0;
-	struct run_instance *runs = ini_parse(ini, &count);
+	struct runs_list runs = ini_parse(ini);
 	fclose(ini);
-	if (runs == NULL || count == 0) {
+	if (runs.runs_begin == NULL || runs.runs_end == runs.runs_begin) {
 		fprintf(stderr, "is3-status: Couldn't load config file\n");
 		return 1;
 	}
 
 	setup_global_settings();
-	struct run_instance *const runs_end = runs + count;
-	for(struct run_instance *run = runs; run != runs_end; run++) {
+	for(struct run_instance *run = runs.runs_begin; run != runs.runs_end; run++) {
 		if (!run->vtable->func_init(run->data)) {
 			fprintf(stderr, "is3-status: init for %s:%s failed\n", run->vtable->name, run->instance);
 			return 1;
@@ -75,9 +73,9 @@ int main()
 	fdpoll_init();
 	struct iovec iov[2] = {	{NULL, 0}, {"\n", 1} };
 
-	for (unsigned eventNum = 0; fdpoll_run(runs, runs_end); ++eventNum) {
+	for (unsigned eventNum = 0; fdpoll_run(&runs); ++eventNum) {
 		yajl_gen_array_open(json_gen);
-		for(struct run_instance *run = runs; run != runs_end; run++) {
+		for(struct run_instance *run = runs.runs_begin; run != runs.runs_end; run++) {
 			yajl_gen_map_open(json_gen);
 
 			JSON_OUTPUT_KV(json_gen, "name", run->vtable->name);
@@ -100,8 +98,6 @@ int main()
 	}
 
 	yajl_gen_free(json_gen);
-	free_all_run_instances(runs, count);
-
-
+	free_all_run_instances(&runs);
 	return 0;
 }

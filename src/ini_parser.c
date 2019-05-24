@@ -131,9 +131,9 @@ static const struct cmd_opts general_opts = {
 };
 struct general_settings_t g_general_settings = {0};
 
-struct run_instance *ini_parse(FILE *ini, unsigned *res_size) {
+struct runs_list ini_parse(FILE *ini) {
 	struct run_instance *runs = NULL, *curr = NULL;
-	*res_size = 0;
+	unsigned res_size = 0;
 	char buffer[1024], *ptr;
 	buffer[sizeof(buffer) - 1] = '\0';
 
@@ -170,9 +170,9 @@ struct run_instance *ini_parse(FILE *ini, unsigned *res_size) {
 				goto _error;
 			}
 
-			++(*res_size);
-			runs = realloc(runs, (*res_size) * sizeof(struct run_instance));
-			curr = runs + (*res_size) - 1;
+			++(res_size);
+			runs = realloc(runs, res_size * sizeof(struct run_instance));
+			curr = runs + (res_size - 1);
 			curr->vtable = cmd;
 			curr->instance = (space == ender ? NULL : strdup(space));
 			curr->data = calloc(cmd->data_size, 1);
@@ -184,20 +184,21 @@ struct run_instance *ini_parse(FILE *ini, unsigned *res_size) {
 				goto _error;
 		}
 	}
-	return runs;
+	struct runs_list res = {runs, runs + res_size};
+	return res;
 
 _error:
 	free(runs);
-	*res_size = 0;
-	return NULL;
+	struct runs_list error_res = {NULL, NULL};
+	return error_res;
 }
 
-void free_all_run_instances(struct run_instance *runs, unsigned size) {
-	for (unsigned i = 0; i < size; i++) {
-		if (runs[i].vtable->func_destroy)
-			runs[i].vtable->func_destroy(runs[i].data);
-		free(runs[i].data);
-		free(runs[i].instance);
+void free_all_run_instances(struct runs_list *runs) {
+	for(struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
+		if (run->vtable->func_destroy)
+			run->vtable->func_destroy(run->data);
+		free(run->data);
+		free(run->instance);
 	}
-	free(runs);
+	free(runs->runs_begin);
 }

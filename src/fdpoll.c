@@ -54,7 +54,7 @@ void fdpoll_add(int fd, void (*func_handle)(void *), void *data) {
 	g_fdpoll.data[s-1].func_handle = func_handle;
 }
 
-static void handle_click_event(struct run_instance *runs_begin, struct run_instance *runs_end) {
+static void handle_click_event(struct runs_list *runs) {
 	char input[1024];
 	char errbuf[1024];
 
@@ -86,7 +86,7 @@ static void handle_click_event(struct run_instance *runs_begin, struct run_insta
 				fprintf(stderr, "is3-status: bad click event object: %s\n", input);
 				continue;
 			}
-			for(struct run_instance *run = runs_begin; run != runs_end; run++) {
+			for(struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
 				if ((0 == strcmp(run->vtable->name, name)) && (instance == run->instance || 0 == strcmp(run->instance, instance))) {
 					if (run->vtable->func_cevent)
 						run->vtable->func_cevent(run->data, button);
@@ -99,7 +99,7 @@ static void handle_click_event(struct run_instance *runs_begin, struct run_insta
 	}
 }
 
-bool fdpoll_run(struct run_instance *runs_begin, struct run_instance *runs_end) {
+bool fdpoll_run(struct runs_list *runs) {
 	struct pollfd *const fds = g_fdpoll.fds;
 #ifdef PROFILE
 	static int counter = 10000;
@@ -115,7 +115,7 @@ bool fdpoll_run(struct run_instance *runs_begin, struct run_instance *runs_end) 
 	}
 	if (ret > 0) {
 		if (fds[0].revents & POLLIN)
-			handle_click_event(runs_begin, runs_end);
+			handle_click_event(runs);
 		else if(fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
 			fprintf(stderr, "is3-status: STDIN closed\n");
 			fds[0].fd = -1;

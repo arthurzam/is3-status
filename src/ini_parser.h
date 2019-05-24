@@ -12,7 +12,12 @@ struct run_instance {
 	char *instance;
 };
 
-struct run_instance *ini_parse(FILE *ini, unsigned *res_size);
-void free_all_run_instances(struct run_instance *runs, unsigned size);
+struct runs_list {
+	struct run_instance *runs_begin;
+	struct run_instance *runs_end;
+};
+
+struct runs_list ini_parse(FILE *ini);
+void free_all_run_instances(struct runs_list *runs);
 
 #endif // INI_PARSER_H
