@@ -29,6 +29,8 @@ static void setup_global_settings() {
 		memcpy(g_general_settings.color_degraded, "#FFFF00", 8);
 	if (g_general_settings.color_bad[0] == '\0')
 		memcpy(g_general_settings.color_bad, "#FF0000", 8);
+	if (g_general_settings.interval == 0)
+		g_general_settings.interval = 1;
 }
 
 int main()
@@ -49,7 +51,10 @@ int main()
 	setup_global_settings();
 	struct run_instance *const runs_end = runs + count;
 	for(struct run_instance *run = runs; run != runs_end; run++) {
-		run->vtable->func_init(run->data);
+		if (!run->vtable->func_init(run->data)) {
+			fprintf(stderr, "is3-status: init for %s:%s failed\n", run->vtable->name, run->instance);
+			return 1;
+		}
 		if (!run->data->align)
 			run->data->align = g_general_settings.align;
 		if (run->data->interval < g_general_settings.interval)
@@ -68,9 +73,9 @@ int main()
 	yajl_gen_clear(json_gen);
 
 	fdpoll_init();
-	struct iovec iov[2] = {	{NULL, 0}, 	{"\n", 1} };
+	struct iovec iov[2] = {	{NULL, 0}, {"\n", 1} };
 
-	while (fdpoll_run(runs, runs_end)) {
+	for (unsigned eventNum = 0; fdpoll_run(runs, runs_end); ++eventNum) {
 		yajl_gen_array_open(json_gen);
 		for(struct run_instance *run = runs; run != runs_end; run++) {
 			yajl_gen_map_open(json_gen);
@@ -81,7 +86,7 @@ int main()
 				JSON_OUTPUT_KV(json_gen, "align", run->data->align);
 			if (run->instance)
 				JSON_OUTPUT_KV(json_gen, "instance", run->instance);
-			run->vtable->func_output(run->data, json_gen, true);
+			run->vtable->func_output(run->data, json_gen, (eventNum % run->data->interval == 0));
 
 			yajl_gen_map_close(json_gen);
 		}
