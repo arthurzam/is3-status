@@ -23,8 +23,7 @@ static bool cmd_eth_init(struct cmd_data_base *_data) {
 		data->format_up = strdup("%a");
 
 	data->if_pos = net_add_if(data->interface);
-	free(data->interface);
-	data->interface = NULL;
+	// data->interface is used in inner networking array
 
 	return true;
 }
@@ -33,6 +32,7 @@ static void cmd_eth_destroy(struct cmd_data_base *_data) {
 	struct cmd_eth_data *data = (struct cmd_eth_data *)_data;
 	free(data->format_up);
 	free(data->format_down);
+	free(data->interface);
 }
 
 // generaterd using command ./gen-format.py Aa46
