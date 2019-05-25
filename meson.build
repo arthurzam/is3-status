@@ -1,7 +1,7 @@
 project('is3-status', 'c',
-    license: 'GPL3',
+    license: 'LGPL3',
     version: '1.0',
-    default_options: ['warning_level=3'])
+    default_options: ['warning_level=3', 'b_ndebug=if-release'])
 
 sources = [
   'src/cmd_date.c',
@@ -37,6 +37,10 @@ endif
 
 if (get_option('tests'))
     add_project_arguments('-DTESTS', language : 'c')
+endif
+
+if (get_option('profile'))
+    add_project_arguments('-DPROFILE', language : 'c')
 endif
 
 exe = executable('is3-status', sources, install: true, dependencies: deps)
