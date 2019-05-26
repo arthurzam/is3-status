@@ -52,7 +52,7 @@ int main()
 	}
 
 	setup_global_settings();
-	for(struct run_instance *run = runs.runs_begin; run != runs.runs_end; run++) {
+	FOREACH_RUN(run, &runs) {
 		if (!run->vtable->func_init(run->data)) {
 			fprintf(stderr, "is3-status: init for %s:%s failed\n", run->vtable->name, run->instance);
 			return 1;
@@ -79,7 +79,7 @@ int main()
 
 	for (unsigned eventNum = 0; fdpoll_run(&runs); ++eventNum) {
 		yajl_gen_array_open(json_gen);
-		for(struct run_instance *run = runs.runs_begin; run != runs.runs_end; run++) {
+		FOREACH_RUN(run, &runs) {
 			yajl_gen_map_open(json_gen);
 
 			JSON_OUTPUT_KV(json_gen, "name", run->vtable->name);
@@ -95,7 +95,7 @@ int main()
 		yajl_gen_array_close(json_gen);
 
 		yajl_gen_get_buf(json_gen, (const unsigned char **)&iov[0].iov_base, &iov[0].iov_len);
-		if ( 0 > writev(STDOUT_FILENO, iov, 2)) {
+		if (0 > writev(STDOUT_FILENO, iov, 2)) {
 			fprintf(stderr, "is3-status: unable to send output, error %s\n", strerror(errno));
 		}
 		yajl_gen_clear(json_gen);

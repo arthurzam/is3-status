@@ -86,7 +86,7 @@ static void handle_click_event(struct runs_list *runs) {
 				fprintf(stderr, "is3-status: bad click event object: %s\n", input);
 				continue;
 			}
-			for(struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
+			FOREACH_RUN(run, runs) {
 				if ((0 == strcmp(run->vtable->name, name)) && (instance == run->instance || 0 == strcmp(run->instance, instance))) {
 					if (run->vtable->func_cevent)
 						run->vtable->func_cevent(run->data, button);

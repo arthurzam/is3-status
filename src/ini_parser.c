@@ -205,7 +205,7 @@ void free_all_run_instances(struct runs_list *runs) {
 int test_cmd_array_correct(void) {
 #define TEST_ERR(...) ((void)fprintf(stderr, __VA_ARGS__), false)
 #define ERR_STR(str) "test_cmd_array_correct: "str"\n"
-	if ((((const char *)&__stop_cmd_array) - ((const char *)&__start_cmd_array)) % sizeof(struct cmd) != 0) {
+	if ((size_t)(((const char *)&__stop_cmd_array) - ((const char *)&__start_cmd_array)) % sizeof(struct cmd) != 0) {
 		return TEST_ERR(ERR_STR("somehow cmd_array section's pointers are incorrect"));
 	}
 	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter) {
