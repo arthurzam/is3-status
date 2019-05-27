@@ -6,9 +6,8 @@
 #include <stdlib.h>
 
 static char *strip_str(char *begin, char *end) {
-	// CHECK: what happens when all string is spaces
-	for (; isspace(*begin); ++begin);
-	for (; isspace(*end); --end)
+	for (; isspace(*begin) && begin < end; ++begin);
+	for (; isspace(*end) && begin <= end; --end)
 		*end = '\0';
 	return begin;
 }
