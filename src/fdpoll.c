@@ -41,10 +41,6 @@ void fdpoll_init(void) {
 }
 
 void fdpoll_add(int fd, void (*func_handle)(void *), void *data) {
-	if (!func_handle) {
-		fprintf(stderr, "empty function passed %s\n", strerror(errno));
-		exit(1);
-	}
 	g_fdpoll.size++;
 	const unsigned s = g_fdpoll.size;
 	g_fdpoll.fds = (struct pollfd *)realloc(g_fdpoll.fds, sizeof(struct pollfd) * s);
@@ -87,7 +83,8 @@ static void handle_click_event(struct runs_list *runs) {
 				continue;
 			}
 			FOREACH_RUN(run, runs) {
-				if ((0 == strcmp(run->vtable->name, name)) && (instance == run->instance || 0 == strcmp(run->instance, instance))) {
+				if ((0 == strcmp(run->vtable->name, name)) &&
+						(instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, instance))) {
 					if (run->vtable->func_cevent)
 						run->vtable->func_cevent(run->data, button);
 					break;

@@ -174,10 +174,9 @@ struct runs_list ini_parse(FILE *ini) {
 			curr->instance = (space == ender ? NULL : strdup(space));
 			curr->data = calloc(cmd->data_size, 1);
 		} else {
-			if (!curr) {
-				if (!parse_config(&g_general_settings, &general_opts, ptr))
-					goto _error;
-			} else if (!parse_config(curr->data, &curr->vtable->opts, ptr))
+			void *data = curr ? (void *)curr->data : (void *)&g_general_settings;
+			const struct cmd_opts *opts = curr ? &curr->vtable->opts : &general_opts;
+			if (!parse_config(data, opts, ptr))
 				goto _error;
 		}
 	}
