@@ -26,6 +26,8 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 
 	if (data->wheel_step <= 0)
 		data->wheel_step = 2;
+	if (data->format == NULL)
+		return false;
 
 	int err;
 
@@ -110,7 +112,8 @@ static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_ge
 			fprintf(stderr, "is3-status: ALSA: get_playback_switch: %s\n", snd_strerror(res));
 		if (!pbval) {
 			JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_degraded);
-			output_format = data->format_muted;
+			if (data->format_muted)
+				output_format = data->format_muted;
 		}
 	}
 
@@ -165,7 +168,7 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 					val = data->volume_min;
 			}
 			snd_mixer_selem_set_playback_volume(data->elem, 0, val);
-			break;
+			return true;
 		}
 	}
 	return false;
