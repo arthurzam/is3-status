@@ -11,13 +11,36 @@
 #include "ini_parser.h"
 #include "fdpoll.h"
 
-static FILE *open_config() {
+static FILE *open_config(const char *defPath) {
+	if (defPath && access(defPath, R_OK) == 0)
+		return fopen(defPath, "r");
 	const char *path = getenv("IS3_STATUS_CONFIG");
 	if (path && access(path, R_OK) == 0)
 		return fopen(path, "r");
 
+	char buf[FILENAME_MAX + 1];
+	buf[0] = buf[FILENAME_MAX] = '\0';
 
+	if ((path = getenv("XDG_CONFIG_HOME")) && path[0] != '\0') {
+		strncpy(buf, path, FILENAME_MAX);
+		strncat(buf, "/is3-status.conf", FILENAME_MAX);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+	}
+	if ((path = getenv("HOME"))){
+		strncpy(buf, path, FILENAME_MAX);
+		const size_t len = strlen(buf);
 
+		strncpy(buf + len, "/.config/is3-status.conf", FILENAME_MAX - len);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+
+		strncpy(buf + len, "/.is3-status.conf", FILENAME_MAX - len);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+	}
+	if (access("/etc/is3-status.conf", R_OK) == 0)
+		return fopen("/etc/is3-status.conf", "r");
 
 	return NULL;
 }
@@ -33,13 +56,13 @@ static void setup_global_settings() {
 		g_general_settings.interval = 1;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 #ifdef TESTS
 	if(!test_cmd_array_correct())
 		return 1;
 #endif
-	FILE *ini = open_config();
+	FILE *ini = open_config(argc > 1 ? argv[1] : NULL);
 	if (ini == NULL) {
 		fprintf(stderr, "is3-status: Couldn't find config file\n");
 		return 1;
