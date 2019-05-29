@@ -5,7 +5,6 @@ project('is3-status', 'c',
 
 sources = [
   'src/cmd_date.c',
-  'src/cmd_disk_usage.c',
   'src/cmd_eth.c',
   'src/ini_parser.c',
   'src/main.c',
@@ -25,6 +24,14 @@ deps = [dependency('yajl')]
 if (get_option('alsa').enabled())
     deps += dependency('alsa')
     sources += 'src/cmd_volume_alsa.c'
+endif
+
+if (get_option('disk-usage').enabled())
+    sources += 'src/cmd_disk_usage.c'
+endif
+
+if (get_option('run-watch').enabled())
+    sources += 'src/cmd_run_watch.c'
 endif
 
 if (get_option('sway').enabled())
