@@ -1,5 +1,5 @@
 project('is3-status', 'c',
-    license: 'LGPL3',
+    license: 'GPL3',
     version: '1.0',
     default_options: ['warning_level=3', 'b_ndebug=if-release'])
 

@@ -1,3 +1,20 @@
+/*
+ * This file is part of is3-status (https://github.com/arthurzam/is3-status).
+ * Copyright (C) 2019  Arthur Zamarin
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "main.h"
 
 #include <stdio.h>
@@ -21,8 +38,6 @@ struct cmd_sway_language_data {
 	int socketfd;
 };
 
-// https://github.com/swaywm/sway/blob/master/common/ipc-client.c
-
 static char ipc_magic[] = {'i', '3', '-', 'i', 'p', 'c'};
 
 static char *cmd_sway_language_get_socketpath(void) {
@@ -37,10 +52,8 @@ static char *cmd_sway_language_get_socketpath(void) {
 		ssize_t nret = getline(&line, &line_size, fp);
 		pclose(fp);
 		if (nret > 0) {
-			// remove trailing newline, if there is one
-			if (line[nret - 1] == '\n') {
+			if (line[nret - 1] == '\n')
 				line[nret - 1] = '\0';
-			}
 			return line;
 		}
 		free(line);
@@ -181,12 +194,9 @@ static void cmd_sway_language_destroy(struct cmd_data_base *_data) {
 static bool cmd_sway_language_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 
-	if (update)
-		if (!cmd_sway_language_query(data))
+	if (update && !cmd_sway_language_query(data))
 			return false;
-
 	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_layout);
-
 	return true;
 }
 
