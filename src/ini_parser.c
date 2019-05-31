@@ -90,9 +90,6 @@ static bool parse_config(void *cmd_data, const struct cmd_opts *cmd_opts, char *
 			memcpy(dst, &l, sizeof(l));
 			break;
 		}
-		case OPT_TYPE_BOOL: {
-			// TODO: check for 1/0 ; on/off ; true/false
-		}
 		case OPT_TYPE_COLOR: {
 			char color[8];
 			if (value[0] != '#' || value[7] != '\0') {

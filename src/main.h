@@ -34,15 +34,12 @@ extern struct general_settings_t {
 enum cmd_option_type {
 	OPT_TYPE_LONG = 0,
 	OPT_TYPE_STR = 1,
-	OPT_TYPE_BOOL = 2,
-	OPT_TYPE_COLOR = 3,
-	OPT_TYPE_ALIGN = 4,
-	OPT_TYPE_PATH_FILE = 5,
-	OPT_TYPE_PATH_DIR = 6,
+	OPT_TYPE_COLOR = 2,
+	OPT_TYPE_ALIGN = 3
 };
 struct cmd_option {
-	uint16_t type:3;
-	uint16_t offset:13;
+	uint16_t type:2;
+	uint16_t offset:14;
 };
 #define CMD_OPTS_GEN_NAME(name, ...) name
 #define CMD_OPTS_GEN_DATA(name, ...) {__VA_ARGS__}
