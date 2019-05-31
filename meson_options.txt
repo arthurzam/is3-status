@@ -3,5 +3,6 @@ option('disk-usage', type: 'feature', value: 'auto', description: 'Enable disk u
 option('profile', type: 'boolean', value: false, description: 'Disable infinite loop, not meant for deploying')
 option('run-watch', type: 'feature', value: 'auto', description: 'Enable running watch module')
 option('sway', type: 'feature', value: 'auto', description: 'Enable accessing SwayWM\'s modules')
+option('systemd', type: 'feature', value: 'auto', description: 'Enable systemd\'s modules')
 option('tests', type: 'boolean', value: false, description: 'Enable inner tests, not meant for deploying')
 option('x11', type: 'feature', value: 'auto', description: 'Enable accessing X11\'s modules')

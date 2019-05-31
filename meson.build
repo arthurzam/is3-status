@@ -38,6 +38,11 @@ if (get_option('sway').enabled())
     sources += 'src/cmd_sway_language.c'
 endif
 
+if (get_option('systemd').enabled())
+    deps += dependency('libsystemd', version : '>=221')
+    sources += 'src/cmd_systemd_watch.c'
+endif
+
 if (get_option('x11').enabled())
     deps += dependency('x11')
     sources += 'src/cmd_x11_language.c'
