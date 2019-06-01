@@ -91,7 +91,6 @@ static bool parse_config(void *cmd_data, const struct cmd_opts *cmd_opts, char *
 			break;
 		}
 		case OPT_TYPE_COLOR: {
-			char color[8];
 			if (value[0] != '#' || value[7] != '\0') {
 				fprintf(stderr, "Color is incorrect [%s]\n", value);
 				return false;
@@ -102,7 +101,7 @@ static bool parse_config(void *cmd_data, const struct cmd_opts *cmd_opts, char *
 					return false;
 				}
 			}
-			memcpy(dst, &color, sizeof(color));
+			memcpy(dst, value, 8);
 			break;
 		}
 		case OPT_TYPE_ALIGN: {

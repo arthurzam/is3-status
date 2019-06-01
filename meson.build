@@ -18,7 +18,6 @@ scripts = [
     'scripts/gen-format.py'
 ]
 
-pkgconfig = import('pkgconfig')
 deps = [dependency('yajl')]
 
 if (get_option('alsa').enabled())
