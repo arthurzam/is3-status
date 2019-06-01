@@ -26,16 +26,18 @@
 
 struct cmd_disk_usage_data {
 	struct cmd_data_base base;
-	char *format;
 	char *cached_text;
+	char *vfs_path;
 	long use_decimal;
+	char *format;
 };
 
 static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
-	if (data->format == NULL) {
+	if (data->format == NULL)
 		data->format = strdup("Free: %F");
-	}
+	if (data->vfs_path == NULL)
+		data->vfs_path = strdup("/");
 	data->use_decimal = !!data->use_decimal;
 	data->cached_text = malloc(CACHE_TEXT_SIZE);
 	data->cached_text[0] = '\0';
@@ -45,6 +47,7 @@ static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 	free(data->format);
+	free(data->vfs_path);
 }
 
 #define DISK_PREFIX_MAX 4
@@ -52,13 +55,13 @@ static const struct disk_prefix_t {
 	const char *prefix;
 	uint64_t base;
 } g_disk_prefixs[2][DISK_PREFIX_MAX] = {
-	{
+	{ // binary
 		{"TB", 0x10000000000ULL}, // 1024^4
 		{"GB", 0x40000000ULL}, // 1024^3
 		{"MB", 0x100000ULL}, // 1024^2
 		{"KB", 0x400ULL}, // 1024^1
 	},
-	{
+	{ // decimal
 		{"TiB", 1000000000000ULL}, // 1000^4
 		{"GiB", 1000000000ULL}, // 1000^3
 		{"MiB", 1000000ULL}, // 1000^2
@@ -73,11 +76,10 @@ static const uint32_t cmd_disk_usage_var_options[8] = {0x00000000, 0x00000000, 0
 static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 
-	if (update || data->cached_text[0] == '\0') {
-		struct statvfs buf;
-		statvfs("/", &buf);
+	struct statvfs buf;
+	int res;
 
-		int res;
+	if ((update || data->cached_text[0] == '\0') && statvfs(data->vfs_path, &buf) == 0) {
 		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, CACHE_TEXT_SIZE};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0, base;
@@ -129,6 +131,7 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_disk_usage_data, base.align)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, base.interval)), \
+	F("path", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, vfs_path)), \
 	F("use_decimal", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, use_decimal))
 
 static const char *const cmd_disk_usage_options_names[] = {
