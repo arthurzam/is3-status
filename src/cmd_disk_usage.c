@@ -71,7 +71,7 @@ static const struct disk_prefix_t {
 static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
 
 // generaterd using command ./gen-format.py aAfFtuU
-static const uint32_t cmd_disk_usage_var_options[8] = {0x00000000, 0x00000000, 0x00200042, 0x00300042, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
 
 static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;

@@ -56,7 +56,7 @@ static const struct cmd_option *find_cmd_option(const struct cmd_opts *cmd_opts,
 	return NULL;
 }
 
-static bool parse_config(void *cmd_data, const struct cmd_opts *cmd_opts, char *ptr) {
+static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, char *ptr) {
 	char *value = strchr(ptr, '=');
 	if (value == NULL) {
 		fprintf(stderr, "Bad line [%s]\n", ptr);
@@ -180,7 +180,7 @@ struct runs_list ini_parse(FILE *ini) {
 				goto _error;
 			}
 
-			++(res_size);
+			++res_size;
 			runs = realloc(runs, res_size * sizeof(struct run_instance));
 			curr = runs + (res_size - 1);
 			curr->vtable = cmd;
@@ -189,7 +189,7 @@ struct runs_list ini_parse(FILE *ini) {
 		} else {
 			void *data = curr ? (void *)curr->data : (void *)&g_general_settings;
 			const struct cmd_opts *opts = curr ? &curr->vtable->opts : &general_opts;
-			if (!parse_config(data, opts, ptr))
+			if (!parse_assignment(data, opts, ptr))
 				goto _error;
 		}
 	}

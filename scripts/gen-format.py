@@ -23,4 +23,4 @@ for arg in argv[1:]:
         val = ord(char)
         res[val >> 5] |= (1 << (val & 31))
 print('// generaterd using command', ' '.join(argv))
-print('{' + ', '.join(map('0x{0:08X}'.format, res)) + '}')
+print('VPRINT_OPTS(<name>, {' + ', '.join(map('0x{0:08X}'.format, res)) + '});')

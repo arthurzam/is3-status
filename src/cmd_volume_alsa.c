@@ -109,7 +109,7 @@ static void cmd_volume_alsa_destroy(struct cmd_data_base *_data) {
 }
 
 // generaterd using command ./gen-format.py vV
-static const uint32_t cmd_volume_alsa_var_options[8] = {0x00000000, 0x00000000, 0x00400000, 0x00400000, 0x00000000, 0x00000000, 0x00000000, 0x00000000};
+VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
 
 static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
