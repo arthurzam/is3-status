@@ -34,9 +34,8 @@ static const char *g_local_tz = NULL;
 
 static bool cmd_date_init(struct cmd_data_base *_data) {
 	struct cmd_date_data *data = (struct cmd_date_data *)_data;
-	if (data->format == NULL) {
-		data->format = strdup("%a %Y-%m-%d %H:%M:%S");
-	}
+	if (data->format == NULL)
+		return false;
 
 	if (g_local_tz == NULL)
 		g_local_tz = getenv("TZ");

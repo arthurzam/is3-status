@@ -16,6 +16,7 @@
 */
 
 #include "networking.h"
+#include "fdpoll.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -59,6 +60,8 @@ static void setup_netlink(void) {
 		fprintf(stderr, "bind(netlink) failed: %s\n", strerror(errno));
 		exit(1);
 	}
+
+	fdpoll_add(g_net_global.netlink_fd, handle_netlink_read, NULL);
 }
 
 static void net_query_info(struct net_if_addrs *curr_if) {
@@ -108,7 +111,8 @@ static struct net_if_addrs *net_find_if(const char *if_name) {
 	return NULL;
 }
 
-void handle_netlink_read(void) {
+void handle_netlink_read(void *arg) {
+	(void)arg;
 	char buf[4096];
 	struct iovec iov = { buf, sizeof buf };
 	struct sockaddr_nl snl;

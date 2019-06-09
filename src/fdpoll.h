@@ -22,8 +22,7 @@
 
 struct runs_list;
 
-void fdpoll_init(void);
 void fdpoll_add(int fd, void(*func_handle)(void *data), void *data);
-bool fdpoll_run(struct runs_list *runs);
+bool fdpoll_run(void);
 
 #endif // FDPOLL_H

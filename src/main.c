@@ -23,6 +23,7 @@
 #include <sys/uio.h>
 
 #include <yajl_version.h>
+#include <yajl_tree.h>
 
 #include "main.h"
 #include "ini_parser.h"
@@ -73,6 +74,53 @@ static void setup_global_settings() {
 		g_general_settings.interval = 1;
 }
 
+static void handle_click_event(void *arg) {
+	struct runs_list *runs = arg;
+	char input[1024];
+	char errbuf[1024];
+
+	while (fgets(input, sizeof(input), stdin)) {
+		char* walker = input;
+		if (*walker == '[')
+			walker++;
+		if (*walker == '\0' || *walker == '\n')
+			continue;
+		if (*walker == ',')
+			walker++;
+
+		yajl_val node = yajl_tree_parse(walker, errbuf, sizeof(errbuf));
+		if(YAJL_IS_OBJECT(node)) {
+			const char *name = NULL, *instance = NULL;
+			int button = -1;
+
+			for (size_t i = 0; i < node->u.object.len; ++i ) {
+				const char * key = node->u.object.keys[i];
+				if (0 == memcmp(key, "name", 5))
+					name = YAJL_GET_STRING(node->u.object.values[i]);
+				else if (0 == memcmp(key, "instance", 9))
+					instance = YAJL_GET_STRING(node->u.object.values[i]);
+				else if (0 == memcmp(key, "button", 7))
+					button = (int)YAJL_GET_INTEGER(node->u.object.values[i]);
+			}
+
+			if (name == NULL || button == -1) {
+				fprintf(stderr, "is3-status: bad click event object: %s\n", input);
+				continue;
+			}
+			FOREACH_RUN(run, runs) {
+				if ((0 == strcmp(run->vtable->name, name)) &&
+						(instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, instance))) {
+					if (run->vtable->func_cevent)
+						run->vtable->func_cevent(run->data, button);
+					break;
+				}
+			}
+		} else
+			fprintf(stderr, "is3-status: unable to parse click event:\n>>> %s\n", input);
+		yajl_tree_free(node);
+	}
+}
+
 int main(int argc, char *argv[])
 {
 #ifdef TESTS
@@ -114,10 +162,10 @@ int main(int argc, char *argv[])
 	yajl_gen_array_open(json_gen);
 	yajl_gen_clear(json_gen);
 
-	fdpoll_init();
+	fdpoll_add(STDIN_FILENO, handle_click_event, &runs);
 	struct iovec iov[2] = {	{NULL, 0}, {"\n", 1} };
 
-	for (unsigned eventNum = 0; fdpoll_run(&runs); ++eventNum) {
+	for (unsigned eventNum = 0; fdpoll_run(); ++eventNum) {
 		yajl_gen_array_open(json_gen);
 		FOREACH_RUN(run, &runs) {
 			yajl_gen_map_open(json_gen);
