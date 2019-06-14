@@ -40,11 +40,11 @@ static const struct cmd *find_cmd(const char *name) {
 }
 
 static const struct cmd_option *find_cmd_option(const struct cmd_opts *cmd_opts, const char *name) {
-	unsigned bottom = 0;
-	unsigned top = cmd_opts->size - 1;
+	int bottom = 0;
+	int top = (int)cmd_opts->size - 1;
 
 	while (bottom <= top) {
-		const unsigned mid = (bottom + top) / 2;
+		const int mid = (bottom + top) / 2;
 		const int cmp_res = strcmp(cmd_opts->names[mid], name);
 		if (cmp_res == 0)
 			return cmd_opts->opts + mid;
