@@ -24,14 +24,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <systemd/sd-bus.h>
-
 struct cmd_mpris_data {
 	struct cmd_data_base base;
 	char *mpris_service;
 	char *format_playing;
 	char *format_paused;
 	char *format_stopped;
+
+	sd_bus *bus;
 
 	struct dbus_mpris_data {
 		const struct dbus_fields_t *fields;
@@ -81,34 +81,30 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	data->data.fields = &cmd_mpris_dbus;
 	dbus_add_watcher(data->mpris_service, "/org/mpris/MediaPlayer2", &data->data);
 
-	sd_bus *bus;
 	sd_bus_error error = SD_BUS_ERROR_NULL;
-	int r = sd_bus_open_user(&bus);
+	int r = sd_bus_open_user(&data->bus);
 	if (r < 0) {
 		fprintf(stderr, "is3-status: mpris: Failed to connect to user bus: %s\n", strerror(-r));
 		return false;
 	}
 
 	char *tmp = NULL;
-	if (0 <= sd_bus_get_property_string(bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+	if (0 <= sd_bus_get_property_string(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 									   "org.mpris.MediaPlayer2.Player", "PlaybackStatus", &error, &tmp))
 		data->data.playback_status = strdup(tmp);
 	sd_bus_error_free(&error);
 
-	sd_bus_get_property_trivial(bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+	sd_bus_get_property_trivial(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 								"org.mpris.MediaPlayer2.Player", "Position",
 								&error, SD_BUS_TYPE_INT64, &data->data.position);
 	sd_bus_error_free(&error);
 
 	sd_bus_message *reply;
-	if (0 <= sd_bus_get_property(bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+	if (0 <= sd_bus_get_property(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 								 "org.mpris.MediaPlayer2.Player", "Metadata", &error, &reply, "a{sv}"))
 		dbus_parse_arr_fields(reply, &data->data);
 	sd_bus_error_free(&error);
 	sd_bus_message_unref(reply);
-
-
-	sd_bus_unref(bus);
 
 	return true;
 }
@@ -124,6 +120,8 @@ static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 	free(data->data.artist);
 	free(data->data.title);
 	free(data->data.playback_status);
+
+	sd_bus_unref(data->bus);
 }
 
 // generaterd using command ./gen-format.py AalpTt
@@ -179,6 +177,31 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 	return true;
 }
 
+static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
+	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
+	const char *op = NULL;
+	switch(event) {
+		case CEVENT_MOUSE_MIDDLE:
+			op = "PlayPause";
+			break;
+		case CEVENT_MOUSE_LEFT:
+			op = "Previous";
+			break;
+		case CEVENT_MOUSE_RIGHT:
+			op = "Next";
+			break;
+		default:
+			return true;
+	}
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	int r = sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+							   "org.mpris.MediaPlayer2.Player", op, &error, NULL, "");
+	if (r < 0)
+		fprintf(stderr, "is3-status: mpris: failed click event %s with: %s\n", op, error.message);
+	sd_bus_error_free(&error);
+	return r >= 0;
+}
+
 #define MPRIS_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_mpris_data, base.align)), \
 	F("format_paused", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_paused)), \
@@ -207,5 +230,6 @@ DECLARE_CMD(cmd_mpris) = {
 
 	.func_init = cmd_mpris_init,
 	.func_destroy = cmd_mpris_destroy,
-	.func_output = cmd_mpris_output
+	.func_output = cmd_mpris_output,
+	.func_cevent = cmd_mpris_cevent
 };
