@@ -93,8 +93,7 @@ static int dbus_monitor_systemd_handler(sd_bus_message *m, void *userdata, sd_bu
 
 static void dbus_monitor_handler(void *data) {
 	(void)data;
-	sd_bus_message *m = NULL;
-	while (0 < sd_bus_process(g_dbus_monitor_bus, &m));
+	while (0 < sd_bus_process(g_dbus_monitor_bus, NULL));
 }
 
 static bool dbus_monitor_setup() {

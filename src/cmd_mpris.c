@@ -21,8 +21,6 @@
 #include "dbus_monitor.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 struct cmd_mpris_data {
 	struct cmd_data_base base;
@@ -78,9 +76,6 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	if (data->format_playing == NULL)
 		data->format_playing = strdup("%T");
 
-	data->data.fields = &cmd_mpris_dbus;
-	dbus_add_watcher(data->mpris_service, "/org/mpris/MediaPlayer2", &data->data);
-
 	sd_bus_error error = SD_BUS_ERROR_NULL;
 	int r = sd_bus_open_user(&data->bus);
 	if (r < 0) {
@@ -88,10 +83,11 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 		return false;
 	}
 
-	char *tmp = NULL;
-	if (0 <= sd_bus_get_property_string(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
-									   "org.mpris.MediaPlayer2.Player", "PlaybackStatus", &error, &tmp))
-		data->data.playback_status = strdup(tmp);
+	data->data.fields = &cmd_mpris_dbus;
+	dbus_add_watcher(data->mpris_service, "/org/mpris/MediaPlayer2", &data->data);
+
+	sd_bus_get_property_string(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+							   "org.mpris.MediaPlayer2.Player", "PlaybackStatus", &error, &data->data.playback_status);
 	sd_bus_error_free(&error);
 
 	sd_bus_get_property_trivial(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
@@ -99,7 +95,7 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 								&error, SD_BUS_TYPE_INT64, &data->data.position);
 	sd_bus_error_free(&error);
 
-	sd_bus_message *reply;
+	sd_bus_message *reply = NULL;
 	if (0 <= sd_bus_get_property(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 								 "org.mpris.MediaPlayer2.Player", "Metadata", &error, &reply, "a{sv}"))
 		dbus_parse_arr_fields(reply, &data->data);
