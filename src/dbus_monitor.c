@@ -47,7 +47,7 @@ void dbus_parse_arr_fields(sd_bus_message *m, void *data) {
 				case FIELD_STR: {
 					sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &value);
 					free(*(char **)dst);
-					*(char **)dst = strdup(value);
+					*(char **)dst = (value[0] == '\0' ? NULL : strdup(value));
 					break;
 				} case FIELD_LONG:
 					sd_bus_message_read_basic(m, SD_BUS_TYPE_INT64, dst);
@@ -60,7 +60,7 @@ void dbus_parse_arr_fields(sd_bus_message *m, void *data) {
 
 					sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &value);
 					free(*(char **)dst);
-					*(char **)dst = strdup(value);
+					*(char **)dst = (value[0] == '\0' ? NULL : strdup(value));
 
 					sd_bus_message_skip(m, NULL);
 					sd_bus_message_exit_container(m);

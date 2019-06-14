@@ -29,6 +29,9 @@
 struct cmd_mpris_data {
 	struct cmd_data_base base;
 	char *mpris_service;
+	char *format_playing;
+	char *format_paused;
+	char *format_stopped;
 
 	struct dbus_mpris_data {
 		const struct dbus_fields_t *fields;
@@ -68,6 +71,12 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 
 	if (data->mpris_service == NULL)
 		return false;
+	if (data->format_stopped == NULL)
+		data->format_stopped = strdup("Stopped");
+	if (data->format_paused == NULL)
+		data->format_paused = strdup(data->format_stopped);
+	if (data->format_playing == NULL)
+		data->format_playing = strdup("%T");
 
 	data->data.fields = &cmd_mpris_dbus;
 	dbus_add_watcher(data->mpris_service, "/org/mpris/MediaPlayer2", &data->data);
@@ -107,6 +116,9 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 	free(data->mpris_service);
+	free(data->format_paused);
+	free(data->format_playing);
+	free(data->format_stopped);
 
 	free(data->data.album);
 	free(data->data.artist);
@@ -120,14 +132,19 @@ VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x001110
 static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 
-	if (data->data.playback_status == NULL || 0 == strcmp(data->data.playback_status, "Stopped")) {
-		JSON_OUTPUT_KV(json_gen, "full_text", "Stopped");
-		return true;
+	const char *output_format = data->format_stopped, *color = NULL;
+	if (data->data.playback_status == NULL);
+	else if (0 == strcmp(data->data.playback_status, "Playing")) {
+		output_format = data->format_playing;
+		color = g_general_settings.color_good;
+	} else if (0 == strcmp(data->data.playback_status, "Paused")) {
+		output_format = data->format_paused;
+		color = g_general_settings.color_degraded;
 	}
 
 	int res;
 	char buffer[256];
-	struct vprint ctx = {cmd_mpris_var_options, "%a - %t (%p/%l)", buffer, sizeof(buffer)};
+	struct vprint ctx = {cmd_mpris_var_options, output_format, buffer, sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
 			case 'a':
@@ -144,14 +161,28 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 			case 'l':
 				vprint_time(&ctx, (int)data->data.length / 1000000);
 				break;
+			case 'T':
+				if (data->data.artist) {
+					vprint_strcat(&ctx, data->data.artist);
+					if (data->data.title)
+						vprint_strcat(&ctx, " - ");
+				}
+				if (data->data.title)
+					vprint_strcat(&ctx, data->data.title);
+				break;
 		}
 	}
+	if (color)
+		JSON_OUTPUT_COLOR(json_gen, color);
 	JSON_OUTPUT_K(json_gen, "full_text", buffer, sizeof(buffer) - ctx.remainingSize);
 	return true;
 }
 
 #define MPRIS_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_mpris_data, base.align)), \
+	F("format_paused", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_paused)), \
+	F("format_playing", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_playing)), \
+	F("format_stopped", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_stopped)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_mpris_data, base.interval)), \
 	F("mpris_service", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, mpris_service))
 
