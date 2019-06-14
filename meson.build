@@ -41,6 +41,7 @@ if (get_option('systemd').enabled())
     deps += dependency('libsystemd', version : '>=221')
     sources += 'src/cmd_systemd_watch.c'
     sources += 'src/dbus_monitor.c'
+    sources += 'src/cmd_mpris.c'
 endif
 
 if (get_option('x11').enabled())

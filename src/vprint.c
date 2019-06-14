@@ -21,6 +21,13 @@
 #include <stdarg.h>
 #include <string.h>
 
+static void vprint_ch(struct vprint *ctx, char ch) {
+	ctx->buffer[0] = ch;
+	ctx->buffer[1] = '\0';
+	ctx->buffer += 1;
+	ctx->remainingSize -= 1;
+}
+
 int vprint_walk(struct vprint *ctx) {
 	const char *next = strchr(ctx->currPos, '%');
 	if (next == NULL)
@@ -37,10 +44,7 @@ int vprint_walk(struct vprint *ctx) {
 	if (0 != (ctx->var_options[n >> 5] & (1 << (n & 0x1F))))
 		return n;
 	else if (n == '%') {
-		ctx->buffer[0] = '%';
-		ctx->buffer[1] = '\0';
-		ctx->buffer += 1;
-		ctx->remainingSize -= 1;
+		vprint_ch(ctx, '%');
 		return vprint_walk(ctx);
 	} else
 		return VPRINT_UNKNOWN_OPT;
@@ -77,6 +81,20 @@ int vprint_itoa(struct vprint *ctx, int value) {
 
 int vprint_dtoa(struct vprint *ctx, double value) {
 	return vprint_snprintf(ctx, "%.02f", value);
+}
+
+int vprint_time(struct vprint *ctx, int value) {
+	int s = value % 60;
+	value /= 60;
+	int m = value % 60;
+	if (value >= 60) {
+		vprint_snprintf(ctx, "%02d", value / 60);
+		vprint_ch(ctx, ':');
+	}
+	vprint_snprintf(ctx, "%02d", m);
+	vprint_ch(ctx, ':');
+	vprint_snprintf(ctx, "%02d", s);
+	return VPRINT_EOF;
 }
 
 void vprint_collect_used(const char *str, uint32_t var_options[8]) {
