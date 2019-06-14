@@ -18,6 +18,8 @@ scripts = [
     'scripts/gen-format.py'
 ]
 
+needs_dbus = false
+
 deps = [dependency('yajl')]
 
 if (get_option('alsa').enabled())
@@ -29,6 +31,11 @@ if (get_option('disk-usage').enabled())
     sources += 'src/cmd_disk_usage.c'
 endif
 
+if (get_option('mpris').enabled())
+    needs_dbus = true
+    sources += 'src/cmd_mpris.c'
+endif
+
 if (get_option('run-watch').enabled())
     sources += 'src/cmd_run_watch.c'
 endif
@@ -38,10 +45,8 @@ if (get_option('sway').enabled())
 endif
 
 if (get_option('systemd').enabled())
-    deps += dependency('libsystemd', version : '>=221')
+    needs_dbus = true
     sources += 'src/cmd_systemd_watch.c'
-    sources += 'src/dbus_monitor.c'
-    sources += 'src/cmd_mpris.c'
 endif
 
 if (get_option('x11').enabled())
@@ -55,6 +60,11 @@ endif
 
 if (get_option('profile'))
     add_project_arguments('-DPROFILE', language : 'c')
+endif
+
+if (needs_dbus)
+    deps += dependency('libsystemd', version : '>=221')
+    sources += 'src/dbus_monitor.c'
 endif
 
 exe = executable('is3-status', sources, install: true, dependencies: deps)

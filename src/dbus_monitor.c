@@ -80,6 +80,7 @@ void dbus_parse_arr_fields(sd_bus_message *m, void *data) {
 }
 
 static int dbus_monitor_systemd_handler(sd_bus_message *m, void *userdata, sd_bus_error *ret_error) {
+	(void)ret_error;
 	// msg format: sa{sv}as
 	const char *key;
 	sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &key);

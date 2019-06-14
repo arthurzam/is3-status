@@ -131,6 +131,7 @@ VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x001110
 
 static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
+	(void)update;
 
 	const char *output_format = data->format_stopped, *color = NULL;
 	if (data->data.playback_status == NULL);
