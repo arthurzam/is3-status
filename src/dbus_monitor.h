@@ -15,12 +15,36 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef FDPOLL_H
-#define FDPOLL_H
+#ifndef DBUS_MONITOR_H
+#define DBUS_MONITOR_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
-void fdpoll_add(int fd, void(*func_handle)(void *data), void *data);
-bool fdpoll_run(void);
+#include <systemd/sd-bus.h>
 
-#endif // FDPOLL_H
+enum dbus_field_type {
+	FIELD_STR = 0,
+	FIELD_LONG = 1,
+	FIELD_DOUBLE = 2,
+
+	FIELD_ARR_STR_FIRST = 3,
+	FIELD_ARR_DICT_EXPAND = 4
+};
+struct dbus_field {
+	uint16_t type:3;
+	uint16_t offset:13;
+};
+struct dbus_fields_t {
+	const char *const *const names;
+	const struct dbus_field *const opts;
+	const unsigned size;
+};
+struct dbus_monitor_base {
+	const struct dbus_fields_t *fields;
+};
+
+void dbus_parse_arr_fields(sd_bus_message *m, void *data);
+bool dbus_add_watcher(const char *sender, const char *path, void *dst_data);
+
+#endif // DBUS_MONITOR_H
