@@ -195,7 +195,7 @@ static bool cmd_sway_language_output(struct cmd_data_base *_data, yajl_gen json_
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 
 	if (update && !cmd_sway_language_query(data))
-			return false;
+		return false;
 	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_layout);
 	return true;
 }

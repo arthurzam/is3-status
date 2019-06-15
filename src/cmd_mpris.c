@@ -142,6 +142,10 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 	struct vprint ctx = {cmd_mpris_var_options, output_format, buffer, sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
+			case 'A':
+				if (data->data.artist)
+					vprint_strcat(&ctx, data->data.album);
+				break;
 			case 'a':
 				if (data->data.artist)
 					vprint_strcat(&ctx, data->data.artist);
@@ -191,7 +195,7 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 	}
 	sd_bus_error error = SD_BUS_ERROR_NULL;
 	int r = sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
-							   "org.mpris.MediaPlayer2.Player", op, &error, NULL, "");
+							   "org.mpris.MediaPlayer2.Player", op, &error, NULL, NULL);
 	if (r < 0)
 		fprintf(stderr, "is3-status: mpris: failed click event %s with: %s\n", op, error.message);
 	sd_bus_error_free(&error);
