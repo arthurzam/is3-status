@@ -23,7 +23,7 @@
 
 struct vprint {
 	const uint32_t *const var_options;
-	const char *currPos;
+	const char *curr_pos;
 	char *buffer;
 	size_t remainingSize;
 };
@@ -37,10 +37,10 @@ enum vprint_output {
 };
 
 int vprint_walk(struct vprint *ctx);
-int vprint_strcat(struct vprint *ctx, const char *str);
-int vprint_itoa(struct vprint *ctx, int value);
-int vprint_dtoa(struct vprint *ctx, double value);
-int vprint_time(struct vprint *ctx, int value);
+void vprint_strcat(struct vprint *ctx, const char *str);
+void vprint_itoa(struct vprint *ctx, int value);
+void vprint_dtoa(struct vprint *ctx, double value);
+void vprint_time(struct vprint *ctx, int value);
 void vprint_collect_used(const char *str, uint32_t var_options[8]);
 
 #endif // INI_PARSER_H
