@@ -121,12 +121,6 @@ _exit:
 	return (found == sizeof(g_mem_opts) / sizeof(g_mem_opts[0]));
 }
 
-__attribute__((always_inline)) inline bool cmd_memory_threshold_cmp(long threshold, int64_t free, int64_t total) {
-	if (threshold >= 0)
-		return free < threshold;
-	return free < -threshold * total / 100;
-}
-
 // generaterd using command ./scripts/gen-format.py AaFfSstUu
 VPRINT_OPTS(cmd_memory_data_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
 

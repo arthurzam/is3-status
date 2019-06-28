@@ -143,7 +143,7 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
 			case 'A':
-				if (data->data.artist)
+				if (data->data.album)
 					vprint_strcat(&ctx, data->data.album);
 				break;
 			case 'a':

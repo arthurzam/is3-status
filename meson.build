@@ -80,3 +80,28 @@ if (needs_dbus)
 endif
 
 exe = executable('is3-status', sources, install: true, dependencies: deps, c_args: ['-D_GNU_SOURCE'])
+
+scdoc = find_program('scdoc', native: true, required: get_option('man-pages'))
+if scdoc.found()
+    sh = find_program('sh', native: true)
+    #ide:editable-filelist
+    man_files = [
+        'is3-status.1.scd',
+    ]
+    foreach filename : man_files
+        topic = filename.split('.')[-3].split('/')[-1]
+        section = filename.split('.')[-2]
+        output = '@0@.@1@'.format(topic, section)
+
+        custom_target(
+            output,
+            input: filename,
+            output: output,
+            command: [
+                sh, '-c', '@0@ < @INPUT@ > @1@'.format(scdoc.path(), output)
+            ],
+            install: true,
+            install_dir: '@0@/man@1@'.format(get_option('mandir'), section)
+        )
+    endforeach
+endif
