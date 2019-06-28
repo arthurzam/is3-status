@@ -229,17 +229,21 @@ int test_cmd_array_correct(void) {
 			if (0 <= strcmp(iter->opts.names[i - 1], iter->opts.names[i]))
 				return TEST_ERR(ERR_STR("cmd %s: options not sorted"), iter->name);
 
-		const struct {
+		static const struct {
 			const char *name;
 			unsigned type;
+			unsigned offset;
 		} base_opts[] = {
-			{"align", OPT_TYPE_ALIGN},
-			{"interval", OPT_TYPE_LONG},
+			{"align", OPT_TYPE_ALIGN, offsetof(struct cmd_data_base, align)},
+			{"interval", OPT_TYPE_LONG, offsetof(struct cmd_data_base, interval)},
 		};
 		for (size_t i = 0; i < sizeof(base_opts) / sizeof(base_opts[0]); ++i) {
 			const struct cmd_option *cmd_option = find_cmd_option(&iter->opts, base_opts[i].name);
-			if(cmd_option && cmd_option->type != base_opts[i].type)
+			if (!cmd_option);
+			else if(cmd_option->type != base_opts[i].type)
 				return TEST_ERR(ERR_STR("cmd %s: incorrect type for %s"), iter->name, base_opts[i].name);
+			else if(cmd_option->offset != base_opts[i].offset)
+				return TEST_ERR(ERR_STR("cmd %s: incorrect offset for %s"), iter->name, base_opts[i].name);
 		}
 	}
 	return true;
