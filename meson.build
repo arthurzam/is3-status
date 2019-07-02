@@ -27,6 +27,10 @@ if (get_option('alsa').enabled())
     sources += 'src/cmd_volume_alsa.c'
 endif
 
+if (get_option('cpu-temperature').enabled())
+    sources += 'src/cmd_cpu_temperature.c'
+endif
+
 if (get_option('disk-usage').enabled())
     sources += 'src/cmd_disk_usage.c'
 endif

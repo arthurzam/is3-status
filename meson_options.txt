@@ -1,4 +1,5 @@
 option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing ALSA volume')
+option('cpu-temperature', type: 'feature', value: 'auto', description: 'Enable CPU temperature module')
 option('disk-usage', type: 'feature', value: 'auto', description: 'Enable disk usage module')
 option('mpris', type: 'feature', value: 'auto', description: 'Enable mpris watcher')
 option('profile', type: 'boolean', value: false, description: 'Disable infinite loop, not meant for deploying')
