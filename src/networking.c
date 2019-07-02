@@ -34,8 +34,7 @@
 
 #define FOREACH_RTA(begin,len) \
 	for(struct rtattr *rta = (struct rtattr *)(begin); \
-		RTA_OK(rta, (len)); \
-		rta = RTA_NEXT(rta, (len)))
+		RTA_OK(rta, (len)); rta = RTA_NEXT(rta, (len)))
 
 struct net_global_t g_net_global = {
 	.ifs_arr = NULL,
@@ -114,21 +113,15 @@ static struct net_if_addrs *net_find_if(const char *if_name) {
 void handle_netlink_read(void *arg) {
 	(void)arg;
 	char buf[4096];
-	struct iovec iov = { buf, sizeof buf };
-	struct sockaddr_nl snl;
-	struct msghdr msg = { (void *) &snl, sizeof snl, &iov, 1, NULL, 0, 0 };
 	struct net_if_addrs *curr_if;
 	long status;
-	while((status = recvmsg(g_net_global.netlink_fd, &msg, 0)) > 0 || errno == EINTR) {
-		if (status <= 0)
-			continue;
-
+	while ((status = recv(g_net_global.netlink_fd, buf, sizeof buf, MSG_DONTWAIT)) > 0 || errno == EINTR) {
 		// DOCS: man 7 rtnetlink
-		for (struct nlmsghdr *h = (struct nlmsghdr *) buf; NLMSG_OK (h, (unsigned int) status); h = NLMSG_NEXT (h, status)) {
+		for (struct nlmsghdr *h = (struct nlmsghdr *)buf; NLMSG_OK(h, (unsigned)status); h = NLMSG_NEXT(h, status)) {
 			bool isDel = false;
 			switch (h->nlmsg_type) {
 				case NLMSG_ERROR:
-					fprintf(stderr, "read_netlink : some kind of error\n");
+					fprintf(stderr, "read_netlink: some kind of error\n");
 					/* fall through */
 				case NLMSG_DONE: // Finished reading
 					return;
@@ -178,8 +171,7 @@ void handle_netlink_read(void *arg) {
 								curr_if->if_ip6[0] = '\0';
 							else if (ifa->ifa_family == AF_INET)
 								curr_if->if_ip4[0] = '\0';
-							break;
-						} else {
+						} else if (address) {
 							if (ifa->ifa_family == AF_INET6)
 								inet_ntop(AF_INET6, address, curr_if->if_ip6, sizeof(curr_if->if_ip6));
 							else if (ifa->ifa_family == AF_INET)
@@ -194,6 +186,6 @@ void handle_netlink_read(void *arg) {
 	if (status == 0) {
 		fprintf(stderr, "netlink_read : EOF\n");
 	} else if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
-		fprintf(stderr, "recvmsg(netlink) failed: %s\n", strerror(errno));
+		fprintf(stderr, "recv(netlink) failed: %s\n", strerror(errno));
 	}
 }
