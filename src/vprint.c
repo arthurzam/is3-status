@@ -39,14 +39,14 @@ int vprint_walk(struct vprint *ctx) {
 	ctx->buffer += len;
 	ctx->remainingSize -= len;
 	ctx->curr_pos += len + 2;
-	const char n = *(next + 1);
-	if (0 != (ctx->var_options[n >> 5] & (1 << (n & 0x1F))))
+	const uint8_t n = *(const uint8_t *)(next + 1);
+	if ((n < 0x80) && (ctx->var_options[n >> 5] & (1 << (n & 0x1F))))
 		return n;
-	else if (n == '%') {
+	if (n == '%') {
 		vprint_ch(ctx, '%');
 		return vprint_walk(ctx);
-	} else
-		return VPRINT_UNKNOWN_OPT;
+	}
+	return VPRINT_UNKNOWN_OPT;
 }
 
 void vprint_strcat(struct vprint *ctx, const char *str) {

@@ -27,7 +27,7 @@ struct vprint {
 	char *buffer;
 	size_t remainingSize;
 };
-#define VPRINT_OPTS(name, ...) static const uint32_t name[8] = __VA_ARGS__
+#define VPRINT_OPTS(name, ...) static const uint32_t name[4] = __VA_ARGS__
 
 enum vprint_output {
 	VPRINT_EOF = -1,

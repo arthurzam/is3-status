@@ -35,7 +35,7 @@ struct cmd_disk_usage_data {
 static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 	if (data->format == NULL)
-		data->format = strdup("Free: %F");
+		return false;
 	if (data->vfs_path == NULL)
 		data->vfs_path = strdup("/");
 	data->use_decimal = !!data->use_decimal;
@@ -71,7 +71,7 @@ static const struct disk_prefix_t {
 static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
 
 // generaterd using command ./gen-format.py aAfFtuU
-VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
+VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
 static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;

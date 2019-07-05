@@ -53,7 +53,7 @@ static void cmd_eth_destroy(struct cmd_data_base *_data) {
 }
 
 // generaterd using command ./gen-format.py Aa46
-VPRINT_OPTS(cmd_eth_var_options, {0x00000000, 0x00500000, 0x00000002, 0x00000002, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
+VPRINT_OPTS(cmd_eth_var_options, {0x00000000, 0x00500000, 0x00000002, 0x00000002});
 
 static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_eth_data *data = (struct cmd_eth_data *)_data;

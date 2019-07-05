@@ -58,7 +58,7 @@ static void cmd_cpu_temperature_data_destroy(struct cmd_data_base *_data) {
 }
 
 // generaterd using command ./scripts/gen-format.py cf
-VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
+VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
 static bool cmd_cpu_temperature_data_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;

@@ -52,7 +52,7 @@ static bool cmd_run_watch_output(struct cmd_data_base *_data, yajl_gen json_gen,
 		if (pid_file == NULL)
 			return false;
 		char buffer[128];
-		if (fgets(buffer, sizeof(buffer) - 1, pid_file) != NULL)
+		if (fgets(buffer, sizeof(buffer), pid_file) != NULL)
 			data->pid = (pid_t)strtol(buffer, NULL, 10);
 		fclose(pid_file);
 	}

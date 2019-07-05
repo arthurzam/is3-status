@@ -121,7 +121,7 @@ static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 }
 
 // generaterd using command ./gen-format.py AalpTt
-VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x00111002, 0x00000000, 0x00000000, 0x00000000, 0x00000000});
+VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x00111002});
 
 static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
@@ -207,7 +207,6 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 	F("format_paused", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_paused)), \
 	F("format_playing", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_playing)), \
 	F("format_stopped", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_stopped)), \
-	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_mpris_data, base.interval)), \
 	F("mpris_service", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, mpris_service))
 
 static const char *const cmd_mpris_options_names[] = {
