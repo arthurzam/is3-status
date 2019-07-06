@@ -38,7 +38,7 @@ struct cmd_sway_language_data {
 	int socketfd;
 };
 
-static char ipc_magic[] = {'i', '3', '-', 'i', 'p', 'c'};
+static const char ipc_magic[] = {'i', '3', '-', 'i', 'p', 'c'};
 
 static char *cmd_sway_language_get_socketpath(void) {
 	const char *sock = getenv("SWAYSOCK");

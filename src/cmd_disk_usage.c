@@ -22,14 +22,12 @@
 
 #include <sys/statvfs.h>
 
-#define CACHE_TEXT_SIZE 256
-
 struct cmd_disk_usage_data {
 	struct cmd_data_base base;
-	char *cached_text;
 	char *vfs_path;
-	long use_decimal;
 	char *format;
+	long use_decimal;
+	char cached_text[256];
 };
 
 static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
@@ -39,7 +37,6 @@ static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 	if (data->vfs_path == NULL)
 		data->vfs_path = strdup("/");
 	data->use_decimal = !!data->use_decimal;
-	data->cached_text = malloc(CACHE_TEXT_SIZE);
 	data->cached_text[0] = '\0';
 	return true;
 }
@@ -52,9 +49,9 @@ static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 
 #define DISK_PREFIX_MAX 4
 static const struct disk_prefix_t {
-	const char *prefix;
+	const char suffix[4];
 	uint64_t base;
-} g_disk_prefixs[2][DISK_PREFIX_MAX] = {
+} g_disk_suffixs[2][DISK_PREFIX_MAX] = {
 	{ // binary
 		{"TB", 0x10000000000ULL}, // 1024^4
 		{"GB", 0x40000000ULL}, // 1024^3
@@ -70,8 +67,8 @@ static const struct disk_prefix_t {
 };
 static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
 
-// generaterd using command ./gen-format.py aAfFtuU
-VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
+// generaterd using command ./scripts/gen-format.py aAfFtuU
+VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00200042, 0x00300042});
 
 static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
@@ -80,10 +77,10 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	int res;
 
 	if ((update || data->cached_text[0] == '\0') && statvfs(data->vfs_path, &buf) == 0) {
-		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, CACHE_TEXT_SIZE};
+		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, sizeof(data->cached_text)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0, base;
-			const char *prefix;
+			const char *suffix;
 			switch (res) {
 				case 'a':
 				case 'A':
@@ -105,20 +102,20 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 				value *= (uint64_t)buf.f_bsize;
 				const struct disk_prefix_t *temp = &g_disk_prefix_base;
 				for(unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
-					if (g_disk_prefixs[data->use_decimal][i].base < value) {
-						temp = g_disk_prefixs[data->use_decimal] + i;
+					if (g_disk_suffixs[data->use_decimal][i].base < value) {
+						temp = g_disk_suffixs[data->use_decimal] + i;
 						break;
 					}
 				}
 				base = temp->base;
-				prefix = temp->prefix;
+				suffix = temp->suffix;
 			} else { // big letter -> percenage output
 				value *= 100;
 				base = (uint64_t)buf.f_blocks;
-				prefix = "%";
+				suffix = "%";
 			}
 			vprint_dtoa(&ctx, (double)value / base);
-			vprint_strcat(&ctx, prefix);
+			vprint_strcat(&ctx, suffix);
 		}
 	}
 
