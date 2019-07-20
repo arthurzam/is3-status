@@ -93,5 +93,6 @@ __attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const 
 #define JSON_OUTPUT_KV(json_gen,key,value) JSON_OUTPUT_K(json_gen, key, value, strlen(value))
 #define JSON_OUTPUT_COLOR(json_gen,value) json_output((json_gen), "color", 5, (value), 7)
 
+#define X_STRLEN(str) ((sizeof(str)/sizeof(str[0]))-sizeof(str[0]))
 
 #endif // GENERAL_H
