@@ -75,7 +75,7 @@ static void net_query_info(struct net_if_addrs *curr_if) {
 		fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
 		goto out;
 	}
-	inet_ntop(AF_INET, &((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
+	inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
 	if (ioctl(fd, SIOCGIFFLAGS, &ifr)) {
 		fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
 		goto out;

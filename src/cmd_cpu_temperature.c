@@ -31,7 +31,7 @@ struct cmd_cpu_temperature_data {
 	int curr_value;
 };
 
-static bool cmd_cpu_temperature_data_init(struct cmd_data_base *_data) {
+static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
 	if (data->format == NULL)
@@ -51,7 +51,7 @@ static bool cmd_cpu_temperature_data_init(struct cmd_data_base *_data) {
 	return true;
 }
 
-static void cmd_cpu_temperature_data_destroy(struct cmd_data_base *_data) {
+static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 	free(data->format);
 	free(data->path);
@@ -60,7 +60,7 @@ static void cmd_cpu_temperature_data_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py cf
 VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
-static bool cmd_cpu_temperature_data_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
 	if (update || data->curr_value == -1) {
@@ -108,7 +108,7 @@ static const struct cmd_option cmd_cpu_temperature_data_options[] = {
 	CPU_TEMP_OPTIONS(CMD_OPTS_GEN_DATA)
 };
 
-DECLARE_CMD(cmd_mpris) = {
+DECLARE_CMD(cmd_cpu_temperature) = {
 	.name = "cpu_temperature",
 	.data_size = sizeof (struct cmd_cpu_temperature_data),
 
@@ -118,7 +118,7 @@ DECLARE_CMD(cmd_mpris) = {
 		.size = sizeof(cmd_cpu_temperature_data_options) / sizeof(cmd_cpu_temperature_data_options[0])
 	},
 
-	.func_init = cmd_cpu_temperature_data_init,
-	.func_destroy = cmd_cpu_temperature_data_destroy,
-	.func_output = cmd_cpu_temperature_data_output
+	.func_init = cmd_cpu_temperature_init,
+	.func_destroy = cmd_cpu_temperature_destroy,
+	.func_output = cmd_cpu_temperature_output
 };

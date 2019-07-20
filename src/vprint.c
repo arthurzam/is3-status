@@ -39,7 +39,7 @@ int vprint_walk(struct vprint *ctx) {
 	ctx->buffer += len;
 	ctx->remainingSize -= len;
 	ctx->curr_pos += len + 2;
-	const uint8_t n = *(const uint8_t *)(next + 1);
+	const uint8_t n = (uint8_t)(*(next + 1));
 	if ((n < 0x80) && (ctx->var_options[n >> 5] & (1 << (n & 0x1F))))
 		return n;
 	if (n == '%') {

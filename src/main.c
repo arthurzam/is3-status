@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 		}
 		yajl_gen_array_close(json_gen);
 
-		yajl_gen_get_buf(json_gen, (const unsigned char **)&iov[0].iov_base, &iov[0].iov_len);
+		yajl_gen_get_buf(json_gen, (const unsigned char **)(void *)&iov[0].iov_base, &iov[0].iov_len);
 		if (0 > writev(STDOUT_FILENO, iov, 2)) {
 			fprintf(stderr, "is3-status: unable to send output, error %s\n", strerror(errno));
 		}
