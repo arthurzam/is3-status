@@ -24,59 +24,77 @@
 
 struct cmd_x11_language_data {
 	struct cmd_data_base base;
-	char *display;
+
+	char *lan1_def;
+	char *lan1_upper;
+	char *lan2_def;
+	char *lan2_upper;
+
 	Display *dpy;
-	const char *cached_text;
-	const char *cached_color;
+	unsigned cached_index;
+	unsigned cached_color;
+
+	char *display;
 };
 
 static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
-	if (data->display == NULL) {
-		data->display = getenv("DISPLAY");
-		if (data->display == NULL) {
-			data->display = ":0";
-		}
-		data->display = strdup(data->display);
+
+	const char *display = data->display;
+	if (!data->display) {
+		if (!(display = getenv("DISPLAY")))
+			display = ":0";
 	}
 
-	data->dpy = XOpenDisplay(data->display);
-
+	data->dpy = XOpenDisplay(display);
 	free(data->display);
 	data->display = NULL;
+	if (data->dpy == NULL)
+		return false;
 
-	return (data->dpy != NULL);
+	if (!data->lan1_def)
+		return false;
+	data->lan1_upper = strdup(data->lan1_def);
+	for (char *ptr = data->lan1_upper; *ptr; ++ptr)
+		*ptr &= ~0x20; // make upper case
+
+	if (!data->lan2_def)
+		data->lan2_def = strdup(data->lan1_def);
+	data->lan2_upper = strdup(data->lan2_def);
+	for (char *ptr = data->lan2_upper; *ptr; ++ptr)
+		*ptr &= ~0x20; // make upper case
+
+	return true;
 }
 
 static void cmd_x11_language_destroy(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
+
+	free(data->lan1_def);
+	free(data->lan1_upper);
+	free(data->lan2_def);
+	free(data->lan2_upper);
+
 	XCloseDisplay(data->dpy);
 }
 
 static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
-#define IS_BIT(val,bit) (((val) & (1U << (bit))) == 0)
-
-#define IS_NUMLOCK(val) IS_BIT(val, 1)
-#define CAPSLOCK_STR(val,cap,uncap) ((IS_BIT(val, 0)) ? (uncap) : (cap))
-
-	if (update || !data->cached_text) {
+	if (update) {
 		XKeyboardState values;
 		XGetKeyboardControl(data->dpy, &values);
 		const unsigned long lan = values.led_mask;
 
-		if(!IS_BIT(lan,12)) { // Group 2
-			data->cached_text = CAPSLOCK_STR(lan, "HEBREW", "Hebrew");
-		} else {
-			data->cached_text = CAPSLOCK_STR(lan, "ENGLISH", "English");
-		}
-		data->cached_color = IS_NUMLOCK(lan) ? g_general_settings.color_degraded : NULL;
+#define BIT_MOVE(val,src,dst) (((val) & (1U << (src))) >> ((src) - (dst)))
+
+		data->cached_index = BIT_MOVE(lan, 12, 1) | BIT_MOVE(lan, 0, 0);
+		data->cached_color = ((lan & 0x2U) == 0);
 	}
 
 	if (data->cached_color)
-		JSON_OUTPUT_COLOR(json_gen, data->cached_color);
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_text);
+		JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_degraded);
+	JSON_OUTPUT_KV(json_gen, "full_text", *(&data->lan1_def + data->cached_index));
 
 	return true;
 }
@@ -84,7 +102,9 @@ static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_g
 #define X11_LANG_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_x11_language_data, base.align)), \
 	F("display", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, display)), \
-	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_x11_language_data, base.interval))
+	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_x11_language_data, base.interval)), \
+	F("language1", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, lan1_def)), \
+	F("language2", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, lan2_def)), \
 
 static const char *const cmd_x11_language_options_names[] = {
 	X11_LANG_OPTIONS(CMD_OPTS_GEN_NAME)
