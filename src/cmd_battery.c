@@ -51,7 +51,6 @@ struct battery_info_t {
 } __attribute__ ((aligned (sizeof(int))));
 
 enum {
-	// note: should be in the same order as the formats in data
 	BAT_STS_MISSING = 0,
 	BAT_STS_DISCHARGIUNG = 1,
 	BAT_STS_CHARGIUNG = 2,
@@ -204,6 +203,17 @@ static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, b
 		if (info.status == BAT_STS_DISCHARGIUNG && (remaining_pct < (int)data->threshold_pct || remaining_time < data->threshold_time))
 			data->cached_color = g_general_settings.color_bad;
 
+		/* Static check for format relative position */
+		{
+#define BAT_POS_CHECK(pos, field) \
+	_Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_battery_data, format_missing) == (pos) * sizeof(char *), \
+		"Wrong position for " # field)
+			BAT_POS_CHECK(BAT_STS_MISSING, format_missing);
+			BAT_POS_CHECK(BAT_STS_DISCHARGIUNG, format_discharging);
+			BAT_POS_CHECK(BAT_STS_CHARGIUNG, format_charging);
+			BAT_POS_CHECK(BAT_STS_FULL, format_full);
+#undef BAT_POS_CHECK
+		}
 		const char *output_format = *(&data->format_missing + info.status);
 		int res;
 		struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, sizeof(data->cached_output)};

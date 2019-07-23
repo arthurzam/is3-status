@@ -34,7 +34,7 @@ struct cmd_run_watch_data {
 static bool cmd_run_watch_init(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 
-	if (data->path == NULL)
+	if (!data->path)
 		return false;
 	return true;
 }
@@ -49,7 +49,7 @@ static bool cmd_run_watch_output(struct cmd_data_base *_data, yajl_gen json_gen,
 
 	if (update) {
 		FILE *pid_file = fopen(data->path, "r");
-		if (pid_file == NULL)
+		if (!pid_file)
 			return false;
 		char buffer[128];
 		if (fgets(buffer, sizeof(buffer), pid_file) != NULL)

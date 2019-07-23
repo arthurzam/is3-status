@@ -32,9 +32,9 @@ struct cmd_disk_usage_data {
 
 static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
-	if (data->format == NULL)
+	if (!data->format)
 		return false;
-	if (data->vfs_path == NULL)
+	if (!data->vfs_path)
 		data->vfs_path = strdup("/");
 	data->use_decimal = !!data->use_decimal;
 	data->cached_text[0] = '\0';
@@ -81,20 +81,17 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0, base;
 			const char *suffix;
-			switch (res) {
+			switch (res | 0x20) { // convert to lower case
 				case 'a':
-				case 'A':
 					value = (uint64_t)buf.f_bavail;
 					break;
 				case 'f':
-				case 'F':
 					value = (uint64_t)buf.f_bfree;
 					break;
 				case 't':
 					value = (uint64_t)buf.f_blocks;
 					break;
 				case 'u':
-				case 'U':
 					value = (uint64_t)(buf.f_blocks - buf.f_bfree);
 					break;
 			}

@@ -1,7 +1,7 @@
 project('is3-status', 'c',
     license: 'GPL3',
     version: '1.0',
-    default_options: ['warning_level=3', 'b_ndebug=if-release'])
+    default_options: ['c_std=c11', 'warning_level=3', 'b_ndebug=if-release'])
 
 sources = [
   'src/cmd_date.c',
@@ -75,4 +75,4 @@ if (needs_dbus)
     sources += 'src/dbus_monitor.c'
 endif
 
-exe = executable('is3-status', sources, install: true, dependencies: deps)
+exe = executable('is3-status', sources, install: true, dependencies: deps, c_args: ['-D_GNU_SOURCE'])

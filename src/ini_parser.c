@@ -84,13 +84,11 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 			char *str = strdup(value);
 			memcpy(dst, &str, sizeof(str));
 			break;
-		}
-		case OPT_TYPE_LONG: {
+		} case OPT_TYPE_LONG: {
 			long l = atol(value);
 			memcpy(dst, &l, sizeof(l));
 			break;
-		}
-		case OPT_TYPE_COLOR: {
+		} case OPT_TYPE_COLOR: {
 			if (value[0] != '#' || value[7] != '\0') {
 				fprintf(stderr, "Color is incorrect [%s]\n", value);
 				return false;
@@ -103,8 +101,7 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 			}
 			memcpy(dst, value, 8);
 			break;
-		}
-		case OPT_TYPE_ALIGN: {
+		} case OPT_TYPE_ALIGN: {
 			const char *align = NULL;
 			if (0 == memcmp(value, "left", 5))
 				align = "left";
@@ -193,13 +190,11 @@ struct runs_list ini_parse(FILE *ini) {
 				goto _error;
 		}
 	}
-	struct runs_list res = {runs, runs + res_size};
-	return res;
+	return (struct runs_list){runs, runs + res_size};
 
 _error:
 	free(runs);
-	struct runs_list error_res = {NULL, NULL};
-	return error_res;
+	return (struct runs_list){NULL, NULL};
 }
 
 void free_all_run_instances(struct runs_list *runs) {

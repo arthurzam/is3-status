@@ -145,8 +145,7 @@ void handle_netlink_read(void *arg) {
 							curr_if->is_down = (char)((ifi->ifi_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
 					}
 					break;
-				}
-				case RTM_DELADDR:
+				} case RTM_DELADDR:
 					isDel = true;
 					/* fall through */
 				case RTM_GETADDR:

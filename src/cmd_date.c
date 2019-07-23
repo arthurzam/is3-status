@@ -34,13 +34,13 @@ static const char *g_local_tz = NULL;
 
 static bool cmd_date_init(struct cmd_data_base *_data) {
 	struct cmd_date_data *data = (struct cmd_date_data *)_data;
-	if (data->format == NULL)
+	if (!data->format)
 		return false;
 
-	if (g_local_tz == NULL)
+	if (!g_local_tz)
 		g_local_tz = getenv("TZ");
 
-	if (data->timezone == NULL && g_local_tz)
+	if (!data->timezone && g_local_tz)
 		data->timezone = strdup(g_local_tz);
 
 	return true;
@@ -57,11 +57,10 @@ static bool cmd_date_output(struct cmd_data_base *_data, yajl_gen json_gen, bool
 	(void)update;
 
 	if (data->timezone != g_curr_tz) {
-		if (data->timezone) {
+		if (data->timezone)
 			setenv("TZ", data->timezone, 1);
-		} else {
+		else
 			unsetenv("TZ");
-		}
 		tzset();
 		g_curr_tz = data->timezone;
 	}

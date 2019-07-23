@@ -67,13 +67,13 @@ static const struct dbus_fields_t cmd_mpris_dbus = {
 static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 
-	if (data->mpris_service == NULL)
+	if (!data->mpris_service)
 		return false;
-	if (data->format_stopped == NULL)
+	if (!data->format_stopped)
 		data->format_stopped = strdup("Stopped");
-	if (data->format_paused == NULL)
+	if (!data->format_paused)
 		data->format_paused = strdup(data->format_stopped);
-	if (data->format_playing == NULL)
+	if (!data->format_playing)
 		data->format_playing = strdup("%T");
 
 	sd_bus_error error = SD_BUS_ERROR_NULL;

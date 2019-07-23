@@ -41,10 +41,8 @@ static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
 	const char *display = data->display;
-	if (!data->display) {
-		if (!(display = getenv("DISPLAY")))
-			display = ":0";
-	}
+	if (!data->display && !(display = getenv("DISPLAY")))
+		display = ":0";
 
 	data->dpy = XOpenDisplay(display);
 	free(data->display);
@@ -91,6 +89,15 @@ static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_g
 		data->cached_index = BIT_MOVE(lan, 12, 1) | BIT_MOVE(lan, 0, 0);
 		data->cached_color = ((lan & 0x2U) == 0);
 	}
+
+#define BAT_POS_CHECK(pos, field) \
+	_Static_assert(offsetof(struct cmd_x11_language_data, field) - offsetof(struct cmd_x11_language_data, lan1_def) == (pos) * sizeof(char *), \
+		"Wrong position for " # field)
+			BAT_POS_CHECK(0, lan1_def);
+			BAT_POS_CHECK(1, lan1_upper);
+			BAT_POS_CHECK(2, lan2_def);
+			BAT_POS_CHECK(3, lan2_upper);
+#undef BAT_POS_CHECK
 
 	if (data->cached_color)
 		JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_degraded);
