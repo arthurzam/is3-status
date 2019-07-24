@@ -47,26 +47,6 @@ static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 	free(data->vfs_path);
 }
 
-#define DISK_PREFIX_MAX 4
-static const struct disk_prefix_t {
-	const char suffix[4];
-	uint64_t base;
-} g_disk_suffixs[2][DISK_PREFIX_MAX] = {
-	{ // binary
-		{"TB", 0x10000000000ULL}, // 1024^4
-		{"GB", 0x40000000ULL}, // 1024^3
-		{"MB", 0x100000ULL}, // 1024^2
-		{"KB", 0x400ULL}, // 1024^1
-	},
-	{ // decimal
-		{"TiB", 1000000000000ULL}, // 1000^4
-		{"GiB", 1000000000ULL}, // 1000^3
-		{"MiB", 1000000ULL}, // 1000^2
-		{"KiB", 1000ULL}, // 1000^1
-	},
-};
-static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
-
 // generaterd using command ./scripts/gen-format.py aAfFtuU
 VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00200042, 0x00300042});
 
@@ -79,40 +59,14 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	if ((update || data->cached_text[0] == '\0') && statvfs(data->vfs_path, &buf) == 0) {
 		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, sizeof(data->cached_text)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
-			uint64_t value = 0, base;
-			const char *suffix;
+			uint64_t value = 0;
 			switch (res | 0x20) { // convert to lower case
-				case 'a':
-					value = (uint64_t)buf.f_bavail;
-					break;
-				case 'f':
-					value = (uint64_t)buf.f_bfree;
-					break;
-				case 't':
-					value = (uint64_t)buf.f_blocks;
-					break;
-				case 'u':
-					value = (uint64_t)(buf.f_blocks - buf.f_bfree);
-					break;
+				case 'a': value = (uint64_t)buf.f_bavail; break;
+				case 'f': value = (uint64_t)buf.f_bfree; break;
+				case 't': value = (uint64_t)buf.f_blocks; break;
+				case 'u': value = (uint64_t)(buf.f_blocks - buf.f_bfree); break;
 			}
-			if ((res & 0x20) != 0) { // small letter -> human output
-				value *= (uint64_t)buf.f_bsize;
-				const struct disk_prefix_t *temp = &g_disk_prefix_base;
-				for(unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
-					if (g_disk_suffixs[data->use_decimal][i].base < value) {
-						temp = g_disk_suffixs[data->use_decimal] + i;
-						break;
-					}
-				}
-				base = temp->base;
-				suffix = temp->suffix;
-			} else { // big letter -> percenage output
-				value *= 100;
-				base = (uint64_t)buf.f_blocks;
-				suffix = "%";
-			}
-			vprint_dtoa(&ctx, (double)value / base);
-			vprint_strcat(&ctx, suffix);
+			vprint_human_bytes(&ctx, value, ((res & 0x20) == 0 ? (uint64_t)buf.f_blocks : 0), (uint64_t)buf.f_bsize, data->use_decimal);
 		}
 	}
 
