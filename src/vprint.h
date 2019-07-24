@@ -42,7 +42,9 @@ void vprint_strcat(struct vprint *ctx, const char *str);
 void vprint_itoa(struct vprint *ctx, int value);
 void vprint_dtoa(struct vprint *ctx, double value);
 void vprint_time(struct vprint *ctx, int value);
+
 void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal);
+long parse_human_bytes(const char *str);
 
 void vprint_collect_used(const char *str, uint32_t var_options[8]);
 

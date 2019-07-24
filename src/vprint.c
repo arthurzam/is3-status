@@ -95,26 +95,27 @@ void vprint_time(struct vprint *ctx, int value) {
 	ctx->remainingSize -= 5;
 }
 
-void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal) {
 #define DISK_PREFIX_MAX 4
-	static const struct disk_prefix_t {
-		const char suffix[4];
-		uint64_t base;
-	} g_disk_suffixs[2][DISK_PREFIX_MAX] = {
-		{ // binary
-			{"TB", 0x10000000000ULL}, // 1024^4
-			{"GB", 0x40000000ULL}, // 1024^3
-			{"MB", 0x100000ULL}, // 1024^2
-			{"KB", 0x400ULL}, // 1024^1
-		},
-		{ // decimal
-			{"TiB", 1000000000000ULL}, // 1000^4
-			{"GiB", 1000000000ULL}, // 1000^3
-			{"MiB", 1000000ULL}, // 1000^2
-			{"KiB", 1000ULL}, // 1000^1
-		},
-	};
-	static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
+static const struct disk_prefix_t {
+	const char suffix[4];
+	uint64_t base;
+} g_disk_suffixs[2][DISK_PREFIX_MAX] = {
+	{ // binary
+		{"TB", 0x10000000000ULL}, // 1024^4
+		{"GB", 0x40000000ULL}, // 1024^3
+		{"MB", 0x100000ULL}, // 1024^2
+		{"KB", 0x400ULL}, // 1024^1
+	},
+	{ // decimal
+		{"TiB", 1000000000000ULL}, // 1000^4
+		{"GiB", 1000000000ULL}, // 1000^3
+		{"MiB", 1000000ULL}, // 1000^2
+		{"KiB", 1000ULL}, // 1000^1
+	},
+};
+static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
+
+void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal) {
 
 	uint64_t base;
 	const char *suffix;
@@ -136,6 +137,27 @@ void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, u
 	}
 	vprint_dtoa(ctx, (double)value / base);
 	vprint_strcat(ctx, suffix);
+}
+
+long parse_human_bytes(const char *str) {
+	const char *last = str + strlen(str) - 1;
+	long base = 0;
+	if (*last == '%') {
+		base = -1;
+	} else if (*last >= '0' && *last <= '9') {
+		base = 1;
+	} else {
+		for(unsigned v = 0; v < 2; ++v) {
+			for(unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
+				if (0 == memcmp(g_disk_suffixs[v][i].suffix, last - (1 + v), 2 + v)) {
+					base = (long)g_disk_suffixs[v][i].base;
+					goto _out;
+				}
+			}
+		}
+	}
+_out:
+	return base * atoll(str);
 }
 
 void vprint_collect_used(const char *str, uint32_t var_options[8]) {
