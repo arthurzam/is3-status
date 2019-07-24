@@ -44,6 +44,10 @@ if (get_option('mpris').enabled())
     sources += 'src/cmd_mpris.c'
 endif
 
+if (get_option('disk-usage').enabled())
+    sources += 'src/cmd_memory.c'
+endif
+
 if (get_option('run-watch').enabled())
     sources += 'src/cmd_run_watch.c'
 endif

@@ -2,6 +2,7 @@ option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing AL
 option('battery', type: 'feature', value: 'auto', description: 'Enable Battery module')
 option('cpu-temperature', type: 'feature', value: 'auto', description: 'Enable CPU temperature module')
 option('disk-usage', type: 'feature', value: 'auto', description: 'Enable disk usage module')
+option('memory', type: 'feature', value: 'auto', description: 'Enable RAM memory module')
 option('mpris', type: 'feature', value: 'auto', description: 'Enable mpris watcher')
 option('profile', type: 'boolean', value: false, description: 'Disable infinite loop, not meant for deploying')
 option('run-watch', type: 'feature', value: 'auto', description: 'Enable running watch module')
