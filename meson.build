@@ -44,7 +44,11 @@ if (get_option('mpris').enabled())
     sources += 'src/cmd_mpris.c'
 endif
 
-if (get_option('disk-usage').enabled())
+if (get_option('load').enabled())
+    sources += 'src/cmd_load.c'
+endif
+
+if (get_option('memory').enabled())
     sources += 'src/cmd_memory.c'
 endif
 

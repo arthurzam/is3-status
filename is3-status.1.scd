@@ -243,6 +243,12 @@ The module outputs the status of a systemd service.
 	calling "systemctl --user status"), and if set to "0", uses system session
 	(the same as calling "systemctl status"). By default uses system session.
 
+## MODULE: load
+The module outputs the current system load average.
+
+	*format = *_[str]_: the output format. The accepted placeholders are *\%1*
+	for average 1 minute load, *\%2* for 5 minutes and *\%3* for 15 minutes.
+
 ; TODO: add sub sections ("## <name>") for:
 ;  battery
 ;  mpris
