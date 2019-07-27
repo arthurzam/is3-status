@@ -128,7 +128,7 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 
 	struct memory_info_t info = {0};
-	if ((update || data->cached_output[0] == '\0') && cmd_memory_file(&info)) {
+	if (update && cmd_memory_file(&info)) {
 		int res;
 		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {

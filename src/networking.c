@@ -97,7 +97,7 @@ unsigned net_add_if(const char *if_name) {
 
 	net_query_info(curr);
 
-	if (g_net_global.netlink_fd == -1)
+	if (g_net_global.netlink_fd < 0)
 		setup_netlink();
 
 	return g_net_global.ifs_size - 1;

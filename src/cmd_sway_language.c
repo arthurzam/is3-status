@@ -65,7 +65,7 @@ static int cmd_sway_language_open_socket(void) {
 	int socketfd;
 	char *socket_path;
 
-	if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1) {
+	if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
 		fputs("is3-status: sway-language: Unable to open Unix socket\n", stderr);
 		return -1;
 	}
@@ -77,7 +77,7 @@ static int cmd_sway_language_open_socket(void) {
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
 	addr.sun_path[sizeof(addr.sun_path) - 1] = 0;
-	if (connect(socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) == -1) {
+	if (connect(socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
 		fprintf(stderr, "is3-status: sway-language: Unable to connect to %s\n", socket_path);
 		close(socketfd);
 		free(socket_path);
@@ -95,7 +95,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 			uint32_t type;
 		} send_buf = {0, 100};
 		struct iovec iov[2] = { {ipc_magic, sizeof(ipc_magic)}, {&send_buf, sizeof(send_buf)} };
-		if ( 0 > writev(data->socketfd, iov, 2)) {
+		if (0 > writev(data->socketfd, iov, 2)) {
 			fprintf(stderr, "is3-status: sway-language: unable to send request, error %s\n", strerror(errno));
 			return false;
 		}

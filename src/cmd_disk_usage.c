@@ -56,7 +56,7 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	struct statvfs buf;
 	int res;
 
-	if ((update || data->cached_text[0] == '\0') && statvfs(data->vfs_path, &buf) == 0) {
+	if (update && statvfs(data->vfs_path, &buf) == 0) {
 		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, sizeof(data->cached_text)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0;

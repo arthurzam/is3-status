@@ -33,10 +33,7 @@ struct cmd_run_watch_data {
 
 static bool cmd_run_watch_init(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
-
-	if (!data->path)
-		return false;
-	return true;
+	return data->path;
 }
 
 static void cmd_run_watch_destroy(struct cmd_data_base *_data) {

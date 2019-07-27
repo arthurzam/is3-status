@@ -76,7 +76,7 @@ static void cmd_systemd_watch_destroy(struct cmd_data_base *_data) {
 static bool cmd_systemd_watch_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_systemd_watch_data *data = (struct cmd_systemd_watch_data *)_data;
 
-	if (update || !data->cached_result) {
+	if (update) {
 		sd_bus_error error = SD_BUS_ERROR_NULL;
 		int r;
 

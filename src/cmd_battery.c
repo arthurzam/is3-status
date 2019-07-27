@@ -161,7 +161,7 @@ VPRINT_OPTS(cmd_battery_data_var_options, {0x00000000, 0x00000000, 0x00000004, 0
 static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
-	if (update || data->cached_output[0] == '\0') {
+	if (update) {
 		struct battery_info_t info = {BAT_STS_DISCHARGIUNG, -1, -1, -1, -1, -1, -1};
 		int full_design = -1;
 
