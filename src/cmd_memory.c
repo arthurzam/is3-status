@@ -130,7 +130,7 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 	struct memory_info_t info = {0};
 	if (update && cmd_memory_file(&info)) {
 		int res;
-		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, sizeof(data->cached_output)};
+		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			int64_t value = 0;
 			switch (res | 0x20) { // convert to lower case

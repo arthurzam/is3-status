@@ -139,7 +139,7 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 
 	int res;
 	char buffer[256];
-	struct vprint ctx = {cmd_mpris_var_options, output_format, buffer, sizeof(buffer)};
+	struct vprint ctx = {cmd_mpris_var_options, output_format, buffer, buffer + sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
 			case 'A':
@@ -173,7 +173,7 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 	}
 	if (color)
 		JSON_OUTPUT_COLOR(json_gen, color);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, sizeof(buffer) - ctx.remainingSize);
+	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 	return true;
 }
 

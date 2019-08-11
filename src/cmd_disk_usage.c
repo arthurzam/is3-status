@@ -57,7 +57,7 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	int res;
 
 	if (update && statvfs(data->vfs_path, &buf) == 0) {
-		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, sizeof(data->cached_text)};
+		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, data->cached_text + sizeof(data->cached_text)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0;
 			switch (res | 0x20) { // convert to lower case

@@ -216,7 +216,7 @@ static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, b
 		}
 		const char *output_format = *(&data->format_missing + info.status);
 		int res;
-		struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, sizeof(data->cached_output)};
+		struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			switch (res) {
 				case 'b':

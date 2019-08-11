@@ -75,7 +75,7 @@ static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen jso
 
 	int res;
 	char buffer[256];
-	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, buffer, sizeof(buffer)};
+	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, buffer, buffer + sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		if (data->curr_value == -1)
 			vprint_strcat(&ctx, "???");
@@ -88,7 +88,7 @@ static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen jso
 	}
 	if (data->high_threshold > 0 && data->high_threshold < data->curr_value)
 		JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_bad);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, sizeof(buffer) - ctx.remainingSize);
+	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 
 	return true;
 }

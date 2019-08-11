@@ -135,7 +135,7 @@ static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_ge
 	}
 
 	char buffer[256];
-	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, buffer, sizeof(buffer)};
+	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, buffer, buffer + sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
 			case 'v':
@@ -145,7 +145,7 @@ static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_ge
 		}
 	}
 
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, sizeof(buffer) - ctx.remainingSize);
+	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 
 	return true;
 }

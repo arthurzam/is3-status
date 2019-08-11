@@ -21,23 +21,23 @@
 #include <string.h>
 
 static void vprint_ch(struct vprint *ctx, char ch) {
-	ctx->buffer[0] = ch;
-	ctx->buffer[1] = '\0';
-	ctx->buffer += 1;
-	ctx->remainingSize -= 1;
+	ctx->buffer_start[0] = ch;
+	ctx->buffer_start[1] = '\0';
+	ctx->buffer_start += 1;
 }
 
 int vprint_walk(struct vprint *ctx) {
 	const char *next = strchr(ctx->curr_pos, '%');
-	if (next == NULL)
-		return (void)vprint_strcat(ctx, ctx->curr_pos), VPRINT_EOF;
+	if (next == NULL) {
+		vprint_strcat(ctx, ctx->curr_pos);
+		return -1;
+	}
 	const size_t len = (size_t)(next - ctx->curr_pos);
-	if (ctx->remainingSize <= len)
-		return VPRINT_MISSING_SIZE;
-	memcpy(ctx->buffer, ctx->curr_pos, len);
-	ctx->buffer[len] = '\0';
-	ctx->buffer += len;
-	ctx->remainingSize -= len;
+	if (ctx->buffer_start + len >= ctx->buffer_end)
+		return -1;
+	memcpy(ctx->buffer_start, ctx->curr_pos, len);
+	ctx->buffer_start[len] = '\0';
+	ctx->buffer_start += len;
 	ctx->curr_pos += len + 2;
 	const uint8_t n = (uint8_t)(*(next + 1));
 	if ((n < 0x80) && (ctx->var_options[n >> 5] & (1 << (n & 0x1F))))
@@ -46,35 +46,27 @@ int vprint_walk(struct vprint *ctx) {
 		vprint_ch(ctx, '%');
 		return vprint_walk(ctx);
 	}
-	return VPRINT_UNKNOWN_OPT;
+	return -1;
 }
 
 void vprint_strcat(struct vprint *ctx, const char *str) {
-	size_t len = strlen(str);
-	if (ctx->remainingSize <= len)
-		return;
-	memcpy(ctx->buffer, str, len);
-	ctx->buffer[len] = '\0';
-	ctx->buffer += len;
-	ctx->remainingSize -= len;
+	size_t len = strlen(str) + 1;
+	if (ctx->buffer_start + len < ctx->buffer_end) {
+		memcpy(ctx->buffer_start, str, len);
+		ctx->buffer_start += (len - 1);
+	}
 }
 
 void vprint_itoa(struct vprint *ctx, int value) {
-	int len = snprintf(ctx->buffer, ctx->remainingSize, "%d", value);
-	if (len < 0 || (unsigned)len >= ctx->remainingSize)
-		return;
-	ctx->buffer[len] = '\0';
-	ctx->buffer += len;
-	ctx->remainingSize -= (unsigned)len;
+	int len = snprintf(ctx->buffer_start, (size_t)(ctx->buffer_end - ctx->buffer_start), "%d", value);
+	if (len > 0 && ctx->buffer_start + len < ctx->buffer_end)
+		ctx->buffer_start += len;
 }
 
 void vprint_dtoa(struct vprint *ctx, double value) {
-	int len = snprintf(ctx->buffer, ctx->remainingSize, "%.02f", value);
-	if (len < 0 || (unsigned)len >= ctx->remainingSize)
-		return;
-	ctx->buffer[len] = '\0';
-	ctx->buffer += len;
-	ctx->remainingSize -= (unsigned)len;
+	int len = snprintf(ctx->buffer_start, (size_t)(ctx->buffer_end - ctx->buffer_start), "%.02f", value);
+	if (len > 0 && ctx->buffer_start + len < ctx->buffer_end)
+		ctx->buffer_start += len;
 }
 
 void vprint_time(struct vprint *ctx, int value) {
@@ -85,14 +77,13 @@ void vprint_time(struct vprint *ctx, int value) {
 		vprint_itoa(ctx, value / 60);
 		vprint_ch(ctx, ':');
 	}
-	ctx->buffer[0] = (char)('0' + (m / 10));
-	ctx->buffer[1] = (char)('0' + (m % 10));
-	ctx->buffer[2] = ':';
-	ctx->buffer[3] = (char)('0' + (s / 10));
-	ctx->buffer[4] = (char)('0' + (s % 10));
-	ctx->buffer[5] = '\0';
-	ctx->buffer += 5;
-	ctx->remainingSize -= 5;
+	ctx->buffer_start[0] = (char)('0' + (m / 10));
+	ctx->buffer_start[1] = (char)('0' + (m % 10));
+	ctx->buffer_start[2] = ':';
+	ctx->buffer_start[3] = (char)('0' + (s / 10));
+	ctx->buffer_start[4] = (char)('0' + (s % 10));
+	ctx->buffer_start[5] = '\0';
+	ctx->buffer_start += 5;
 }
 
 #define DISK_PREFIX_MAX 4

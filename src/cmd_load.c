@@ -46,7 +46,7 @@ static bool cmd_load_output(struct cmd_data_base *_data, yajl_gen json_gen, bool
 	double loadavg[3];
 	if (update && getloadavg(loadavg, 3) != -1) {
 		int res;
-		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, sizeof(data->cached_output)};
+		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			vprint_dtoa(&ctx, loadavg[res - '1']);
 		}

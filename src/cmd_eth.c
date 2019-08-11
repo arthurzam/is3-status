@@ -65,7 +65,7 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 
 	int res;
 	char buffer[256];
-	struct vprint ctx = {cmd_eth_var_options, output_format, buffer, sizeof(buffer)};
+	struct vprint ctx = {cmd_eth_var_options, output_format, buffer, buffer + sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		const char *addr = NULL;
 		switch (res) {
@@ -93,7 +93,7 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 	}
 
 	JSON_OUTPUT_COLOR(json_gen, color);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, sizeof(buffer) - ctx.remainingSize);
+	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 	return true;
 }
 
