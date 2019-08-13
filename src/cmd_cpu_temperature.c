@@ -100,23 +100,13 @@ static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen jso
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_cpu_temperature_data, base.interval)), \
 	F("path", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, path))
 
-static const char *const cmd_cpu_temperature_data_options_names[] = {
-	CPU_TEMP_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_cpu_temperature_data_options[] = {
-	CPU_TEMP_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_cpu_temperature, CPU_TEMP_OPTIONS)
 
 DECLARE_CMD(cmd_cpu_temperature) = {
 	.name = "cpu_temperature",
 	.data_size = sizeof (struct cmd_cpu_temperature_data),
 
-	.opts = {
-		.names = cmd_cpu_temperature_data_options_names,
-		.opts = cmd_cpu_temperature_data_options,
-		.size = sizeof(cmd_cpu_temperature_data_options) / sizeof(cmd_cpu_temperature_data_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_cpu_temperature),
 
 	.func_init = cmd_cpu_temperature_init,
 	.func_destroy = cmd_cpu_temperature_destroy,

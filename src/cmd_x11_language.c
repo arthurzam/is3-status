@@ -113,23 +113,13 @@ static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_g
 	F("language1", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, lan1_def)), \
 	F("language2", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, lan2_def)), \
 
-static const char *const cmd_x11_language_options_names[] = {
-	X11_LANG_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_x11_language_options[] = {
-	X11_LANG_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_x11_language, X11_LANG_OPTIONS)
 
 DECLARE_CMD(cmd_x11_language) = {
 	.name = "x11_language",
 	.data_size = sizeof (struct cmd_x11_language_data),
 
-	.opts = {
-		.names = cmd_x11_language_options_names,
-		.opts = cmd_x11_language_options,
-		.size = sizeof(cmd_x11_language_options) / sizeof(cmd_x11_language_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_x11_language),
 
 	.func_init = cmd_x11_language_init,
 	.func_destroy = cmd_x11_language_destroy,

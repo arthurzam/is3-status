@@ -102,23 +102,13 @@ static bool cmd_systemd_watch_output(struct cmd_data_base *_data, yajl_gen json_
 	F("service", OPT_TYPE_STR, offsetof(struct cmd_systemd_watch_data, service_name)), \
 	F("use_user_bus", OPT_TYPE_LONG, offsetof(struct cmd_systemd_watch_data, use_user_bus))
 
-static const char *const cmd_systemd_watch_options_names[] = {
-	SYSTEMD_WATCH_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_systemd_watch_options[] = {
-	SYSTEMD_WATCH_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_systemd_watch, SYSTEMD_WATCH_OPTIONS)
 
 DECLARE_CMD(cmd_systemd_watch) = {
 	.name = "systemd_watch",
 	.data_size = sizeof (struct cmd_systemd_watch_data),
 
-	.opts = {
-		.names = cmd_systemd_watch_options_names,
-		.opts = cmd_systemd_watch_options,
-		.size = sizeof(cmd_systemd_watch_options) / sizeof(cmd_systemd_watch_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_systemd_watch),
 
 	.func_init = cmd_systemd_watch_init,
 	.func_destroy = cmd_systemd_watch_destroy,

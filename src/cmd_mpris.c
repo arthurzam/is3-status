@@ -52,11 +52,11 @@ struct cmd_mpris_data {
 	F("xesam:title", FIELD_STR, offsetof(struct dbus_mpris_data, title)), \
 
 static const char *const cmd_mpris_dbus_fields_names[] = {
-	DBUS_MPRIS_FIELDS(CMD_OPTS_GEN_NAME)
+	DBUS_MPRIS_FIELDS(CMD_IMPL_OPTS_GEN_NAME)
 };
 
 static const struct dbus_field cmd_mpris_dbus_fields[] = {
-	DBUS_MPRIS_FIELDS(CMD_OPTS_GEN_DATA)
+	DBUS_MPRIS_FIELDS(CMD_IMPL_OPTS_GEN_DATA)
 };
 static const struct dbus_fields_t cmd_mpris_dbus = {
 	.names = cmd_mpris_dbus_fields_names,
@@ -209,23 +209,13 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 	F("format_stopped", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_stopped)), \
 	F("mpris_service", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, mpris_service))
 
-static const char *const cmd_mpris_options_names[] = {
-	MPRIS_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_mpris_options[] = {
-	MPRIS_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_mpris, MPRIS_OPTIONS)
 
 DECLARE_CMD(cmd_mpris) = {
 	.name = "mpris",
 	.data_size = sizeof (struct cmd_mpris_data),
 
-	.opts = {
-		.names = cmd_mpris_options_names,
-		.opts = cmd_mpris_options,
-		.size = sizeof(cmd_mpris_options) / sizeof(cmd_mpris_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_mpris),
 
 	.func_init = cmd_mpris_init,
 	.func_destroy = cmd_mpris_destroy,

@@ -95,23 +95,13 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	F("threshold_degraded", OPT_TYPE_BYTE_THRESHOLD, offsetof(struct cmd_disk_usage_data, threshold_degraded)), \
 	F("use_decimal", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, use_decimal))
 
-static const char *const cmd_disk_usage_options_names[] = {
-	DISK_USAGE_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_disk_usage_options[] = {
-	DISK_USAGE_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_disk_usage, DISK_USAGE_OPTIONS)
 
 DECLARE_CMD(cmd_disk_usage) = {
 	.name = "disk_usage",
 	.data_size = sizeof (struct cmd_disk_usage_data),
 
-	.opts = {
-		.names = cmd_disk_usage_options_names,
-		.opts = cmd_disk_usage_options,
-		.size = sizeof(cmd_disk_usage_options) / sizeof(cmd_disk_usage_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_disk_usage),
 
 	.func_init = cmd_disk_usage_init,
 	.func_destroy = cmd_disk_usage_destroy,

@@ -103,23 +103,13 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 	F("format_up", OPT_TYPE_STR, offsetof(struct cmd_eth_data, format_up)), \
 	F("interface", OPT_TYPE_STR, offsetof(struct cmd_eth_data, interface))
 
-static const char *const cmd_eth_options_names[] = {
-	ETH_OPTIONS(CMD_OPTS_GEN_NAME)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_eth, ETH_OPTIONS)
 
-static const struct cmd_option cmd_eth_options[] = {
-	ETH_OPTIONS(CMD_OPTS_GEN_DATA)
-};
-
-DECLARE_CMD(cmd_volume_alsa) = {
+DECLARE_CMD(cmd_eth) = {
 	.name = "eth",
 	.data_size = sizeof (struct cmd_eth_data),
 
-	.opts = {
-		.names = cmd_eth_options_names,
-		.opts = cmd_eth_options,
-		.size = sizeof(cmd_eth_options) / sizeof(cmd_eth_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_eth),
 
 	.func_init = cmd_eth_init,
 	.func_destroy = cmd_eth_destroy,

@@ -250,23 +250,13 @@ static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, b
 	F("threshold_pct", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, threshold_pct)), \
 	F("threshold_time", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, threshold_time)), \
 
-static const char *const cmd_battery_data_options_names[] = {
-	BAT_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_battery_data_options[] = {
-	BAT_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_battery, BAT_OPTIONS)
 
 DECLARE_CMD(cmd_battery) = {
 	.name = "battery",
 	.data_size = sizeof (struct cmd_battery_data),
 
-	.opts = {
-		.names = cmd_battery_data_options_names,
-		.opts = cmd_battery_data_options,
-		.size = sizeof(cmd_battery_data_options) / sizeof(cmd_battery_data_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_battery),
 
 	.func_init = cmd_battery_init,
 	.func_destroy = cmd_battery_destroy,

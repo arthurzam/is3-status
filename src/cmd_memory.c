@@ -152,23 +152,13 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 	F("use_decimal", OPT_TYPE_LONG, offsetof(struct cmd_memory_data, use_decimal)), \
 	F("use_method_classical", OPT_TYPE_LONG, offsetof(struct cmd_memory_data, use_method_classical)), \
 
-static const char *const cmd_memory_options_names[] = {
-	MEMORY_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_memory_options[] = {
-	MEMORY_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_memory, MEMORY_OPTIONS)
 
 DECLARE_CMD(cmd_memory) = {
 	.name = "memory",
 	.data_size = sizeof (struct cmd_memory_data),
 
-	.opts = {
-		.names = cmd_memory_options_names,
-		.opts = cmd_memory_options,
-		.size = sizeof(cmd_memory_options) / sizeof(cmd_memory_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_memory),
 
 	.func_init = cmd_memory_init,
 	.func_destroy = cmd_memory_destroy,

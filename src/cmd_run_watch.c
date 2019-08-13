@@ -65,23 +65,13 @@ static bool cmd_run_watch_output(struct cmd_data_base *_data, yajl_gen json_gen,
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_run_watch_data, base.interval)), \
 	F("path", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, path))
 
-static const char *const cmd_run_watch_options_names[] = {
-	RUN_WATCH_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_run_watch_options[] = {
-	RUN_WATCH_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_run_watch, RUN_WATCH_OPTIONS)
 
 DECLARE_CMD(cmd_run_watch) = {
 	.name = "run_watch",
 	.data_size = sizeof (struct cmd_run_watch_data),
 
-	.opts = {
-		.names = cmd_run_watch_options_names,
-		.opts = cmd_run_watch_options,
-		.size = sizeof(cmd_run_watch_options) / sizeof(cmd_run_watch_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_run_watch),
 
 	.func_init = cmd_run_watch_init,
 	.func_destroy = cmd_run_watch_destroy,

@@ -137,12 +137,7 @@ static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_ge
 	char buffer[256];
 	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, buffer, buffer + sizeof(buffer)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
-		switch (res) {
-			case 'v':
-			case 'V':
-				vprint_itoa(&ctx, volume);
-				break;
-		}
+		vprint_itoa(&ctx, volume);
 	}
 
 	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
@@ -200,23 +195,13 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 	F("mixer_idx", OPT_TYPE_LONG, offsetof(struct cmd_volume_alsa_data, mixer_idx)), \
 	F("wheel_step", OPT_TYPE_LONG, offsetof(struct cmd_volume_alsa_data, wheel_step))
 
-static const char *const cmd_volume_alsa_options_names[] = {
-	VOLUME_ALSA_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_volume_alsa_options[] = {
-	VOLUME_ALSA_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_volume_alsa, VOLUME_ALSA_OPTIONS)
 
 DECLARE_CMD(cmd_volume_alsa) = {
 	.name = "volume_alsa",
 	.data_size = sizeof (struct cmd_volume_alsa_data),
 
-	.opts = {
-		.names = cmd_volume_alsa_options_names,
-		.opts = cmd_volume_alsa_options,
-		.size = sizeof(cmd_volume_alsa_options) / sizeof(cmd_volume_alsa_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_volume_alsa),
 
 	.func_init = cmd_volume_alsa_init,
 	.func_destroy = cmd_volume_alsa_destroy,

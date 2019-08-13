@@ -126,18 +126,8 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 	F("color_degraded", OPT_TYPE_COLOR, offsetof(struct general_settings_t, color_degraded)), \
 	F("color_good", OPT_TYPE_COLOR, offsetof(struct general_settings_t, color_good)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct general_settings_t, interval))
-
-static const char *const general_options_names[] = {
-	GENERAL_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-static const struct cmd_option general_date_options[] = {
-	GENERAL_OPTIONS(CMD_OPTS_GEN_DATA)
-};
-static const struct cmd_opts general_opts = {
-	.names = general_options_names,
-	.opts = general_date_options,
-	.size = sizeof(general_date_options) / sizeof(general_date_options[0])
-};
+CMD_OPTS_GEN_STRUCTS(general, GENERAL_OPTIONS)
+static const struct cmd_opts general_opts = CMD_OPTS_GEN_DATA(general);
 struct general_settings_t g_general_settings = {0};
 
 struct runs_list ini_parse(FILE *ini) {

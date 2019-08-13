@@ -205,23 +205,13 @@ static bool cmd_sway_language_output(struct cmd_data_base *_data, yajl_gen json_
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_sway_language_data, base.interval)), \
 	F("keyboard-name", OPT_TYPE_STR, offsetof(struct cmd_sway_language_data, keyboard_name))
 
-static const char *const cmd_sway_language_options_names[] = {
-	SWAY_LANG_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_sway_language_options[] = {
-	SWAY_LANG_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_sway_language, SWAY_LANG_OPTIONS)
 
 DECLARE_CMD(cmd_sway_language) = {
 	.name = "sway_language",
 	.data_size = sizeof (struct cmd_sway_language_data),
 
-	.opts = {
-		.names = cmd_sway_language_options_names,
-		.opts = cmd_sway_language_options,
-		.size = sizeof(cmd_sway_language_options) / sizeof(cmd_sway_language_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_sway_language),
 
 	.func_init = cmd_sway_language_init,
 	.func_destroy = cmd_sway_language_destroy,

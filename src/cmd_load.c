@@ -62,23 +62,13 @@ static bool cmd_load_output(struct cmd_data_base *_data, yajl_gen json_gen, bool
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_load_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_load_data, base.interval)), \
 
-static const char *const cmd_load_options_names[] = {
-	LOAD_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_load_options[] = {
-	LOAD_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_load, LOAD_OPTIONS)
 
 DECLARE_CMD(cmd_load) = {
 	.name = "load",
 	.data_size = sizeof (struct cmd_load_data),
 
-	.opts = {
-		.names = cmd_load_options_names,
-		.opts = cmd_load_options,
-		.size = sizeof(cmd_load_options) / sizeof(cmd_load_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_load),
 
 	.func_init = cmd_load_init,
 	.func_destroy = cmd_load_destroy,

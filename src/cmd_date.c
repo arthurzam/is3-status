@@ -81,23 +81,13 @@ static bool cmd_date_output(struct cmd_data_base *_data, yajl_gen json_gen, bool
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_date_data, format)), \
 	F("timezone", OPT_TYPE_STR, offsetof(struct cmd_date_data, timezone))
 
-static const char *const cmd_date_options_names[] = {
-	DATE_OPTIONS(CMD_OPTS_GEN_NAME)
-};
-
-static const struct cmd_option cmd_date_options[] = {
-	DATE_OPTIONS(CMD_OPTS_GEN_DATA)
-};
+CMD_OPTS_GEN_STRUCTS(cmd_date, DATE_OPTIONS)
 
 DECLARE_CMD(cmd_date) = {
 	.name = "date",
 	.data_size = sizeof (struct cmd_date_data),
 
-	.opts = {
-		.names = cmd_date_options_names,
-		.opts = cmd_date_options,
-		.size = sizeof(cmd_date_options) / sizeof(cmd_date_options[0])
-	},
+	.opts = CMD_OPTS_GEN_DATA(cmd_date),
 
 	.func_init = cmd_date_init,
 	.func_destroy = cmd_date_destroy,
