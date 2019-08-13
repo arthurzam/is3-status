@@ -46,6 +46,8 @@ void vprint_time(struct vprint *ctx, int value);
 void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal);
 long parse_human_bytes(const char *str);
 
+#if 0
 void vprint_collect_used(const char *str, uint32_t var_options[8]);
+#endif
 
 #endif // INI_PARSER_H

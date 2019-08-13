@@ -32,15 +32,22 @@ extern struct general_settings_t {
 } g_general_settings;
 
 enum cmd_option_type {
-	OPT_TYPE_LONG = 0,
-	OPT_TYPE_STR = 1,
-	OPT_TYPE_COLOR = 2,
-	OPT_TYPE_ALIGN = 3
+	OPT_TYPE_LONG = 0, ///< regular long variable
+	OPT_TYPE_STR = 1, ///< malloced char *
+	OPT_TYPE_COLOR = 2, ///< color variable of type char[8]
+	OPT_TYPE_ALIGN = 3, ///< align variable of type const char*, which would point to the alignment
+	/**
+	  * should be a long variable, but with special parsing for suffix:
+	  *  if using % suffix, the long would be a negetive number;
+	  *  otherwise the suffix should be a byte suffix (ex. MB, GiB) and would be positive
+	  */
+	OPT_TYPE_BYTE_THRESHOLD = 4,
 };
 struct cmd_option {
-	uint16_t type:2;
-	uint16_t offset:14;
+	uint16_t type:3;
+	uint16_t offset:13;
 };
+_Static_assert(sizeof(struct cmd_option) == 2, "incorrect bit width in struct cmd_option");
 #define CMD_OPTS_GEN_NAME(name, ...) name
 #define CMD_OPTS_GEN_DATA(name, ...) {__VA_ARGS__}
 
@@ -63,6 +70,11 @@ enum click_event {
 	CEVENT_MOUSE_WHEEL_DOWN = 5
 };
 
+#if __BIGGEST_ALIGNMENT__ >= 16
+	#define CMD_USE_ALIGNMENT __BIGGEST_ALIGNMENT__
+#else
+	#define CMD_USE_ALIGNMENT 16
+#endif
 struct cmd {
 	bool(*func_output)(struct cmd_data_base *data, yajl_gen json_gen, bool update);
 	bool(*func_cevent)(struct cmd_data_base *data, int event);
@@ -82,8 +94,9 @@ struct cmd {
 	const char *const name;
 	const struct cmd_opts opts;
 	const unsigned data_size;
-} __attribute__ ((aligned (__BIGGEST_ALIGNMENT__)));
+} __attribute__ ((aligned (CMD_USE_ALIGNMENT)));
 #define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array")))
+#undef CMD_USE_ALIGNMENT
 
 __attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const char *key, size_t key_size, const char *value, size_t value_size) {
 	yajl_gen_string(json_gen, (const unsigned char *)key, key_size);

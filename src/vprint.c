@@ -107,7 +107,6 @@ static const struct disk_prefix_t {
 static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
 
 void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal) {
-
 	uint64_t base;
 	const char *suffix;
 	if (pct_base != 0) {
@@ -148,9 +147,12 @@ long parse_human_bytes(const char *str) {
 		}
 	}
 _out:
+	if (*str == '-')
+		++str;
 	return base * atoll(str);
 }
 
+#if 0
 void vprint_collect_used(const char *str, uint32_t var_options[8]) {
 	while ((str = strchr(str, '%'))) {
 		if (*(++str) == '\0')
@@ -159,3 +161,4 @@ void vprint_collect_used(const char *str, uint32_t var_options[8]) {
 		++str;
 	}
 }
+#endif

@@ -17,6 +17,7 @@
 
 #include "ini_parser.h"
 #include "main.h"
+#include "vprint.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -81,12 +82,10 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 	void *dst = (uint8_t *)cmd_data + cmd_option->offset;
 	switch (cmd_option->type) {
 		case OPT_TYPE_STR: {
-			char *str = strdup(value);
-			memcpy(dst, &str, sizeof(str));
+			*((char **)dst) = strdup(value);
 			break;
 		} case OPT_TYPE_LONG: {
-			long l = atol(value);
-			memcpy(dst, &l, sizeof(l));
+			*((long *)dst) = atol(value);
 			break;
 		} case OPT_TYPE_COLOR: {
 			if (value[0] != '#' || value[7] != '\0') {
@@ -94,7 +93,7 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 				return false;
 			}
 			for (unsigned i = 1; i < 7; i++) {
-				if (((value[i] < '0') | (value[i] > '9')) & ((value[i] < 'A') | (value[i] > 'Z'))) {
+				if (!isalpha(value[i])) {
 					fprintf(stderr, "Color is incorrect [%s]\n", value);
 					return false;
 				}
@@ -109,7 +108,10 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 				align = "right";
 			else if (0 == memcmp(value, "center", 7))
 				align = "center";
-			memcpy(dst, &align, sizeof(align));
+			*((const char **)dst) = align;
+			break;
+		} case OPT_TYPE_BYTE_THRESHOLD: {
+			*((long *)dst) = parse_human_bytes(value);
 			break;
 		}
 	}
@@ -144,9 +146,7 @@ struct runs_list ini_parse(FILE *ini) {
 	char buffer[1024], *ptr;
 	buffer[sizeof(buffer) - 1] = '\0';
 
-	for(unsigned lineno = 0; !feof(ini); ++lineno) {
-		if (NULL == fgets(buffer, sizeof(buffer) - 1, ini))
-			break;
+	while (fgets(buffer, sizeof(buffer) - 1, ini)) {
 		ptr = buffer;
 
 		for (; isspace(*ptr); ++ptr);
@@ -211,7 +211,7 @@ void free_all_run_instances(struct runs_list *runs) {
 int test_cmd_array_correct(void) {
 #define TEST_ERR(...) ((void)fprintf(stderr, __VA_ARGS__), false)
 #define ERR_STR(str) "test_cmd_array_correct: "str"\n"
-	if ((size_t)(((const char *)&__stop_cmd_array) - ((const char *)&__start_cmd_array)) % sizeof(struct cmd) != 0) {
+	if ((size_t)(((const uint8_t *)&__stop_cmd_array) - ((const uint8_t *)&__start_cmd_array)) % sizeof(struct cmd) != 0) {
 		return TEST_ERR(ERR_STR("somehow cmd_array section's pointers are incorrect"));
 	}
 	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter) {
