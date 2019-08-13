@@ -26,7 +26,12 @@ struct cmd_disk_usage_data {
 	struct cmd_data_base base;
 	char *vfs_path;
 	char *format;
+
 	long use_decimal;
+	long threshold_degraded;
+	long threshold_critical;
+
+	const char *cached_color;
 	char cached_text[256];
 };
 
@@ -68,10 +73,16 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 			}
 			vprint_human_bytes(&ctx, value, ((res & 0x20) == 0 ? (uint64_t)buf.f_blocks : 0), (uint64_t)buf.f_bsize, data->use_decimal);
 		}
+#define DISK_THRESHOLD_CMP(threshold) ((threshold) >= 0 ? (buf.f_bfree * buf.f_blocks < (uint64_t)(threshold)) : buf.f_bfree * 100 < (uint64_t)(-(threshold)) * buf.f_blocks )
+		if (DISK_THRESHOLD_CMP(data->threshold_critical))
+			data->cached_color = g_general_settings.color_bad;
+		else if (DISK_THRESHOLD_CMP(data->threshold_degraded))
+			data->cached_color = g_general_settings.color_degraded;
 	}
 
+	if (data->cached_color)
+		JSON_OUTPUT_COLOR(json_gen, data->cached_color);
 	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_text);
-
 	return true;
 }
 
@@ -80,6 +91,8 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, base.interval)), \
 	F("path", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, vfs_path)), \
+	F("threshold_critical", OPT_TYPE_BYTE_THRESHOLD, offsetof(struct cmd_disk_usage_data, threshold_critical)), \
+	F("threshold_degraded", OPT_TYPE_BYTE_THRESHOLD, offsetof(struct cmd_disk_usage_data, threshold_degraded)), \
 	F("use_decimal", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, use_decimal))
 
 static const char *const cmd_disk_usage_options_names[] = {

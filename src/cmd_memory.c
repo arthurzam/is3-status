@@ -129,12 +129,12 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 					break;
 			}
 			vprint_human_bytes(&ctx, (uint64_t)value, ((res & 0x20) == 0 ? (uint64_t)info.ram_total : 0), 1, data->use_decimal);
-#define MEM_THRESHOLD_CMP(threshold, info) ((info)->ram_free < ((threshold) >= 0 ? (threshold) : -(threshold) * (info)->ram_total / 100))
-			if (MEM_THRESHOLD_CMP(data->threshold_critical, &info))
-				data->cached_color = g_general_settings.color_bad;
-			else if (MEM_THRESHOLD_CMP(data->threshold_degraded, &info))
-				data->cached_color = g_general_settings.color_degraded;
 		}
+#define MEM_THRESHOLD_CMP(threshold) (info.ram_free < ((threshold) >= 0 ? (threshold) : -(threshold) * info.ram_total / 100))
+		if (MEM_THRESHOLD_CMP(data->threshold_critical))
+			data->cached_color = g_general_settings.color_bad;
+		else if (MEM_THRESHOLD_CMP(data->threshold_degraded))
+			data->cached_color = g_general_settings.color_degraded;
 	}
 
 	if (data->cached_color)
