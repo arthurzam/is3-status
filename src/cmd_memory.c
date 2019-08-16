@@ -69,12 +69,13 @@ static bool cmd_memory_file(struct memory_info_t *info) {
 		uint8_t str_len;
 		uint8_t offset;
 	} g_mem_opts[] = {
-		MEM_OPT("Buffers:", ram_buffers),
-		MEM_OPT("Cached:", ram_cached),
-		MEM_OPT("MemAvailable:", ram_available),
-		MEM_OPT("MemFree:", ram_free),
-		MEM_OPT("MemTotal:", ram_total),
-		MEM_OPT("Shmem:", ram_shared),
+		// formatted as a BTree in BFS
+		/* 3 */ MEM_OPT("MemFree:", ram_free),
+		/* 1 */ MEM_OPT("Cached:", ram_cached),
+		/* 5 */ MEM_OPT("Shmem:", ram_shared),
+		/* 0 */ MEM_OPT("Buffers:", ram_buffers),
+		/* 2 */ MEM_OPT("MemAvailable:", ram_available),
+		/* 4 */ MEM_OPT("MemTotal:", ram_total),
 	};
 #undef MEM_OPT
 
@@ -84,22 +85,18 @@ static bool cmd_memory_file(struct memory_info_t *info) {
 	unsigned found = 0;
 	char line[128];
 	while (fgets(line, sizeof(line), memFile)) {
-		int bottom = 0;
-		int top = (sizeof(g_mem_opts) / sizeof(g_mem_opts[0])) - 1;
-		while (bottom <= top) {
-			const int mid = (bottom + top) / 2;
-			const int cmp_res = memcmp(g_mem_opts[mid].str, line, g_mem_opts[mid].str_len);
+		unsigned pos = 0;
+		do {
+			const int cmp_res = memcmp(g_mem_opts[pos].str, line, g_mem_opts[pos].str_len);
 			if (cmp_res == 0) {
-				int64_t *const dst = ((int64_t *)info) + g_mem_opts[mid].offset;
-				*dst = atoll(line + g_mem_opts[mid].str_len) * 1024;
+				int64_t *const dst = ((int64_t *)info) + g_mem_opts[pos].offset;
+				*dst = atoll(line + g_mem_opts[pos].str_len) * 1024;
 				if (++found == sizeof(g_mem_opts) / sizeof(g_mem_opts[0]))
 					goto _exit; // found all
 				break;
-			} else if (cmp_res > 0)
-				top = mid - 1;
-			else
-				bottom = mid + 1;
-		}
+			} else
+				pos = (2 * pos) + (1 + !!(cmp_res < 0));
+		} while (pos < sizeof(g_mem_opts) / sizeof(g_mem_opts[0]));
 	}
 _exit:
 	fclose(memFile);

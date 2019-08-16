@@ -61,7 +61,7 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 
 	struct net_if_addrs *curr_if = g_net_global.ifs_arr + data->if_pos;
 	const char *output_format = (curr_if->is_down && data->format_down) ? data->format_down : data->format_up;
-	const char *color = curr_if->is_down ? color = g_general_settings.color_bad : g_general_settings.color_good;
+	const char *color = curr_if->is_down ? g_general_settings.color_bad : g_general_settings.color_good;
 
 	int res;
 	char buffer[256];
