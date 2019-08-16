@@ -95,63 +95,54 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 		uint8_t type:2;
 		uint8_t offset:6;
 	} g_bat_opts[] = {
-		BAT_OPT("CHARGE_FULL", BAT_OPT_INT, full_design_capacity),
-		BAT_OPT("CHARGE_FULL_DESIGN", BAT_OPT_INT, full_design_design),
-		BAT_OPT("CHARGE_NOW", BAT_OPT_INT, remainingAh),
-		BAT_OPT("CURRENT_NOW", BAT_OPT_ABS_INT, present_rate),
-		BAT_OPT("ENERGY_FULL", BAT_OPT_INT, full_design_capacity),
-		BAT_OPT("ENERGY_FULL_DESIGN", BAT_OPT_INT, full_design_design),
-		BAT_OPT("ENERGY_NOW", BAT_OPT_INT, remainingW),
-		BAT_OPT("POWER_NOW", BAT_OPT_ABS_INT, present_rate),
-		BAT_OPT("STATUS", BAT_OPT_STATUS, status),
-		BAT_OPT("VOLTAGE_NOW", BAT_OPT_ABS_INT, voltage)
+		// formatted as a BTree in BFS
+		/* 6 */ BAT_OPT("ENERGY_NOW", BAT_OPT_INT, remainingW),
+		/* 3 */ BAT_OPT("CURRENT_NOW", BAT_OPT_ABS_INT, present_rate),
+		/* 8 */ BAT_OPT("STATUS", BAT_OPT_STATUS, status),
+		/* 1 */ BAT_OPT("CHARGE_FULL_DESIGN", BAT_OPT_INT, full_design_design),
+		/* 5 */ BAT_OPT("ENERGY_FULL_DESIGN", BAT_OPT_INT, full_design_design),
+		/* 7 */ BAT_OPT("POWER_NOW", BAT_OPT_ABS_INT, present_rate),
+		/* 9 */ BAT_OPT("VOLTAGE_NOW", BAT_OPT_ABS_INT, voltage),
+		/* 0 */ BAT_OPT("CHARGE_FULL", BAT_OPT_INT, full_design_capacity),
+		/* 2 */ BAT_OPT("CHARGE_NOW", BAT_OPT_INT, remainingAh),
+		/* 4 */ BAT_OPT("ENERGY_FULL", BAT_OPT_INT, full_design_capacity),
 	};
 #undef BAT_OPT
 
 	char line[256];
 	while (fgets(line, sizeof(line), batFile)) {
 		char *ptr = line;
-		const struct battery_opt_t *opt = NULL;
 		if (0 != memcmp(line, "POWER_SUPPLY_", 13))
 			continue;
 		ptr += 13;
-		/* binary search opt */
-		{
-			int bottom = 0;
-			int top = (sizeof(g_bat_opts) / sizeof(g_bat_opts[0])) - 1;
-			while (bottom <= top) {
-				const int mid = (bottom + top) / 2;
-				const int cmp_res = memcmp(g_bat_opts[mid].str, ptr, g_bat_opts[mid].str_len);
-				if (cmp_res == 0) {
-					opt = g_bat_opts + mid;
-					ptr += opt->str_len + 1;
-					break;
-				} else if (cmp_res > 0)
-					top = mid - 1;
-				else
-					bottom = mid + 1;
-			}
-			if (bottom > top) // when not found -> opt == NULL
-				continue;
-		}
+		unsigned pos = 0;
+		do {
+			const int cmp_res = memcmp(g_bat_opts[pos].str, ptr, g_bat_opts[pos].str_len);
+			if (cmp_res == 0) {
+				const struct battery_opt_t *opt = g_bat_opts + pos;
+				ptr += opt->str_len + 1;
 
-		int *const dst = ((int *)info) + opt->offset;
-		switch (opt->type) {
-			case BAT_OPT_STATUS: {
-				const int x = strcmp(ptr, "Full");
-				if (x == 0)
-					*dst = BAT_STS_FULL;
-				else if (x < 0 && 0 == strcmp(ptr, "Charging"))
-					*dst = BAT_STS_CHARGIUNG;
+				int *const dst = ((int *)info) + opt->offset;
+				switch (opt->type) {
+					case BAT_OPT_STATUS: {
+						const int x = memcmp(ptr, "Full", 4);
+						if (x == 0)
+							*dst = BAT_STS_FULL;
+						else if (x < 0 && 0 == memcmp(ptr, "Charging", 8))
+							*dst = BAT_STS_CHARGIUNG;
+						break;
+					} case BAT_OPT_ABS_INT:
+						if (*ptr == '-')
+							++ptr;
+						/* fall through */
+					case BAT_OPT_INT:
+						*dst = atoi(ptr);
+						break;
+				}
 				break;
-			} case BAT_OPT_ABS_INT:
-				if (*ptr == '-')
-					++ptr;
-				/* fall through */
-			case BAT_OPT_INT:
-				*dst = atoi(ptr);
-				break;
-		}
+			} else
+				pos = (2 * pos) + (1 + !!(cmp_res < 0));
+		} while (pos < sizeof(g_bat_opts) / sizeof(g_bat_opts[0]));
 	}
 }
 
