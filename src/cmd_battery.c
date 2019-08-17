@@ -125,10 +125,9 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 				int *const dst = ((int *)info) + opt->offset;
 				switch (opt->type) {
 					case BAT_OPT_STATUS: {
-						const int x = memcmp(ptr, "Full", 4);
-						if (x == 0)
+						if (0 == memcmp(ptr, "Full", 4))
 							*dst = BAT_STS_FULL;
-						else if (x < 0 && 0 == memcmp(ptr, "Charging", 8))
+						else if (0 == memcmp(ptr, "Charging", 8))
 							*dst = BAT_STS_CHARGIUNG;
 						break;
 					} case BAT_OPT_ABS_INT:
