@@ -137,6 +137,7 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 					case BAT_OPT_INT:
 						*dst = atoi(ptr);
 						break;
+					default: __builtin_unreachable();
 				}
 				break;
 			} else

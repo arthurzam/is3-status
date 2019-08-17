@@ -79,6 +79,7 @@ void dbus_parse_arr_fields(sd_bus_message *m, void *data) {
 				case FIELD_ARR_DICT_EXPAND:
 					dbus_parse_arr_fields(m, data);
 					break;
+				default: __builtin_unreachable();
 			}
 		} else
 			sd_bus_message_skip(m, NULL);

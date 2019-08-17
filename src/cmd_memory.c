@@ -124,6 +124,7 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 					value = info.ram_total - (data->use_method_classical ? info.ram_free - info.ram_buffers - info.ram_cached :
 																		   info.ram_available);
 					break;
+				default: __builtin_unreachable();
 			}
 			vprint_human_bytes(&ctx, (uint64_t)value, ((res & 0x20) == 0 ? (uint64_t)info.ram_total : 0), 1, data->use_decimal);
 		}

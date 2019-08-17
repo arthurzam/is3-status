@@ -70,6 +70,7 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 				case 'f': value = (uint64_t)buf.f_bfree; break;
 				case 't': value = (uint64_t)buf.f_blocks; break;
 				case 'u': value = (uint64_t)(buf.f_blocks - buf.f_bfree); break;
+				default: __builtin_unreachable();
 			}
 			vprint_human_bytes(&ctx, value, ((res & 0x20) == 0 ? (uint64_t)buf.f_blocks : 0), (uint64_t)buf.f_bsize, data->use_decimal);
 		}

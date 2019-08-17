@@ -84,6 +84,7 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 				if (curr_if->if_ip4[0] != '\0')
 					addr = curr_if->if_ip4;
 				break;
+			default: __builtin_unreachable();
 		}
 		if (!addr) {
 			addr = "no IP";

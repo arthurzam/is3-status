@@ -113,7 +113,7 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 		} case OPT_TYPE_BYTE_THRESHOLD: {
 			*((long *)dst) = parse_human_bytes(value);
 			break;
-		}
+		} default: __builtin_unreachable();
 	}
 
 	return true;
