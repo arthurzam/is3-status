@@ -78,11 +78,7 @@ enum click_event {
 	CEVENT_MOUSE_WHEEL_DOWN = 5
 };
 
-#if __BIGGEST_ALIGNMENT__ >= 16
-	#define CMD_USE_ALIGNMENT __BIGGEST_ALIGNMENT__
-#else
-	#define CMD_USE_ALIGNMENT 16
-#endif
+#define CMD_USE_ALIGNMENT 8
 struct cmd {
 	bool(*func_output)(struct cmd_data_base *data, yajl_gen json_gen, bool update);
 	bool(*func_cevent)(struct cmd_data_base *data, int event);
@@ -103,8 +99,7 @@ struct cmd {
 	const struct cmd_opts opts;
 	const unsigned data_size;
 } __attribute__ ((aligned (CMD_USE_ALIGNMENT)));
-#define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array")))
-#undef CMD_USE_ALIGNMENT
+#define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array"), aligned(CMD_USE_ALIGNMENT)))
 
 __attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const char *key, size_t key_size, const char *value, size_t value_size) {
 	yajl_gen_string(json_gen, (const unsigned char *)key, key_size);
