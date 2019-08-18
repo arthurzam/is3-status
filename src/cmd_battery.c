@@ -165,11 +165,12 @@ static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, b
 
 				full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
 				if (info.remainingAh != -1 && info.remainingW == -1) {
-					info.present_rate = (int)(((float)info.voltage / 1000.0f) * ((float)info.present_rate / 1000.0f));
-					if (info.voltage != -1) {
-						info.remainingW = (int)(((float)info.voltage / 1000.0f) * ((float)info.remainingAh / 1000.0f));
-						full_design = (int)(((float)info.voltage / 1000.0f) * ((float)full_design / 1000.0f));
-					}
+					if (info.present_rate > 0 && info.voltage != -1) {
+						info.present_rate = (int)((float)info.voltage * (float)info.present_rate / 1000000);
+						info.remainingW = (int)((float)info.voltage * (float)info.remainingAh / 1000000);
+						full_design = (int)((float)info.voltage * (float)full_design / 1000000);
+					} else
+						info.remainingW = info.remainingAh;
 				}
 
 				if (full_design == -1 || info.remainingW == -1)

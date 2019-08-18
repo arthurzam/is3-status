@@ -71,16 +71,21 @@ static void net_query_info(struct net_if_addrs *curr_if) {
 	}
 	struct ifreq ifr;
 	strncpy (ifr.ifr_name, curr_if->if_name, IFNAMSIZ - 1);
-	if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-		fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
-		goto out;
-	}
-	inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
+
 	if (ioctl(fd, SIOCGIFFLAGS, &ifr)) {
 		fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
 		goto out;
 	}
 	curr_if->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
+
+	if (!curr_if->is_down) {
+		if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
+			fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
+			goto out;
+		}
+		inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
+	}
+
 out:
 	close(fd);
 }
@@ -95,10 +100,10 @@ unsigned net_add_if(const char *if_name) {
 	curr->if_ip6[0] = '\0';
 	curr->is_down = true;
 
-	net_query_info(curr);
-
 	if (g_net_global.netlink_fd < 0)
 		setup_netlink();
+
+	net_query_info(curr);
 
 	return g_net_global.ifs_size - 1;
 }

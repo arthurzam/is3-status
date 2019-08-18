@@ -70,6 +70,8 @@ void vprint_dtoa(struct vprint *ctx, double value) {
 }
 
 void vprint_time(struct vprint *ctx, int value) {
+	if (value < 0)
+		value = 0;
 	int s = value % 60;
 	value /= 60;
 	int m = value % 60;
