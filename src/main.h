@@ -53,7 +53,7 @@ _Static_assert(sizeof(struct cmd_option) == 2, "incorrect bit width in struct cm
 
 #define CMD_OPTS_GEN_STRUCTS(name, GEN) \
 	static const char *const name ## _options_names[] = { GEN(CMD_IMPL_OPTS_GEN_NAME) }; \
-	static const struct cmd_option name ## _options[] = { GEN(CMD_IMPL_OPTS_GEN_DATA) };
+	static const struct cmd_option name ## _options[] __attribute__ ((aligned (2))) = { GEN(CMD_IMPL_OPTS_GEN_DATA) };
 #define CMD_OPTS_GEN_DATA(name) { \
 		.names = name ## _options_names, .opts = name ## _options, \
 		.size = sizeof(name ## _options) / sizeof(name ## _options[0]) \

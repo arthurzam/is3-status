@@ -51,18 +51,7 @@ struct cmd_mpris_data {
 	F("xesam:artist", FIELD_ARR_STR_FIRST, offsetof(struct dbus_mpris_data, artist)), \
 	F("xesam:title", FIELD_STR, offsetof(struct dbus_mpris_data, title)), \
 
-static const char *const cmd_mpris_dbus_fields_names[] = {
-	DBUS_MPRIS_FIELDS(CMD_IMPL_OPTS_GEN_NAME)
-};
-
-static const struct dbus_field cmd_mpris_dbus_fields[] = {
-	DBUS_MPRIS_FIELDS(CMD_IMPL_OPTS_GEN_DATA)
-};
-static const struct dbus_fields_t cmd_mpris_dbus = {
-	.names = cmd_mpris_dbus_fields_names,
-	.opts = cmd_mpris_dbus_fields,
-	.size = sizeof(cmd_mpris_dbus_fields) / sizeof(cmd_mpris_dbus_fields[0])
-};
+DBUS_MONITOR_GEN_FIELDS(cmd_mpris_dbus, DBUS_MPRIS_FIELDS)
 
 static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
