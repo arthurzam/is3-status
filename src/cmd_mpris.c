@@ -118,10 +118,10 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 
 	const char *output_format = data->format_stopped, *color = NULL;
 	if (data->data.playback_status == NULL);
-	else if (0 == strcmp(data->data.playback_status, "Playing")) {
+	else if (0 == memcmp(data->data.playback_status, "Playing", 8)) {
 		output_format = data->format_playing;
 		color = g_general_settings.color_good;
-	} else if (0 == strcmp(data->data.playback_status, "Paused")) {
+	} else if (0 == memcmp(data->data.playback_status, "Paused", 7)) {
 		output_format = data->format_paused;
 		color = g_general_settings.color_degraded;
 	}
