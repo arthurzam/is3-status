@@ -4,6 +4,7 @@ project('is3-status', 'c',
     default_options: ['c_std=c11', 'warning_level=3', 'b_ndebug=if-release'])
 
 sources = [
+  'src/cmd_wireless.c',
   'src/cmd_date.c',
   'src/cmd_eth.c',
   'src/ini_parser.c',
@@ -21,7 +22,7 @@ scripts = [
 
 needs_dbus = false
 
-deps = [dependency('yajl')]
+deps = [dependency('yajl'), dependency('libnl-3.0'), dependency('libnl-genl-3.0')]
 
 if (get_option('alsa').enabled())
     deps += dependency('alsa')
