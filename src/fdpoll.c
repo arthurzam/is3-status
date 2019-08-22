@@ -72,7 +72,8 @@ int fdpoll_run(void) {
 			if (fds[i].revents & POLLIN) {
 				if (g_fdpoll.data[i].func_handle(g_fdpoll.data[i].data))
 					res = 1;
-			} else if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+			}
+			if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
 				fprintf(stderr, "fdpoll: fd %d closed\n", fds[i].fd);
 				fds[i].fd = -1;
 			}

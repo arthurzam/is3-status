@@ -17,6 +17,7 @@
 
 #include "main.h"
 #include "vprint.h"
+#include "fdpoll.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -32,7 +33,13 @@
 #include <linux/rtnetlink.h>
 #include <linux/nl80211.h>
 
-#include <libnl3/netlink/attr.h>
+
+#include <netlink/netlink.h>
+#include <netlink/socket.h>
+#include <netlink/msg.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/attr.h>
 #include <netlink/genl/genl.h>  //genl_connect, genlmsg_put
 
 // https://alamot.github.io/nl80211/
@@ -40,6 +47,7 @@
 // https://mdlayher.com/blog/linux-netlink-and-go-part-2-generic-netlink/
 // https://wiki.linuxfoundation.org/networking/generic_netlink_howto
 
+void handle_wireless_read(void *arg);
 
 struct cmd_wireless_data {
 	struct cmd_data_base base;
@@ -116,13 +124,32 @@ static int cmd_wireless_get_family_id(struct cmd_wireless_data *data) {
 
 		unsigned len = GENL_LEN(h);
 		FOREACH_NLA(nla, GENL_DATA(h), len) {
-			if ((nla->nla_type & NLA_TYPE_MASK) == CTRL_ATTR_FAMILY_ID) {
-				id = NLA_DATA_CAST(nla, uint16_t);
-				goto _exit;
+			switch (nla->nla_type & NLA_TYPE_MASK) {
+				case CTRL_ATTR_FAMILY_ID:
+					id = NLA_DATA_CAST(nla, uint16_t);
+					break;
+				case CTRL_ATTR_MCAST_GROUPS: {
+					int len2 = nla->nla_len - NLA_HDRLEN;
+
+					FOREACH_NLA(nla_mcast, NLA_DATA(nla), len2) {
+						int len3 = nla_mcast->nla_len - NLA_HDRLEN;
+						FOREACH_NLA(nla_grp, NLA_DATA(nla_mcast), len3) {
+							switch (nla_grp->nla_type & NLA_TYPE_MASK) {
+								case CTRL_ATTR_MCAST_GRP_ID:
+									fprintf(stderr, "id = %u; ", NLA_DATA_CAST(nla_grp, uint32_t));
+									break;
+								case CTRL_ATTR_MCAST_GRP_NAME:
+									fprintf(stderr, "name:  %s\n", (char *)NLA_DATA(nla_grp));
+									break;
+							}
+						}
+
+					}
+					break;
+				}
 			}
 		}
 	}
-_exit:
 	data->netlink_fd = fd;
 	return id;
 }
@@ -152,6 +179,11 @@ static bool cmd_wireless_init(struct cmd_data_base *_data) {
 //	data->if_pos = net_add_if(data->interface);
 	// data->interface is used in inner networking array
 
+	int group = 5;
+	setsockopt(data->netlink_fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP, &group, sizeof(group));
+
+	fdpoll_add(data->netlink_fd, handle_wireless_read, data);
+
 	return true;
 }
 
@@ -160,6 +192,49 @@ static void cmd_wireless_destroy(struct cmd_data_base *_data) {
 	free(data->format_up);
 	free(data->format_down);
 	free(data->interface);
+}
+
+void handle_wireless_read(void *arg) {
+	struct cmd_wireless_data *data = (struct cmd_wireless_data *)arg;
+	char buf[4096];
+
+	long status;
+	while ((status = recv(data->netlink_fd, buf, sizeof buf, MSG_DONTWAIT)) > 0 || errno == EINTR) {
+		for (struct nlmsghdr *h = (struct nlmsghdr *)buf; NLMSG_OK(h, (unsigned)status); h = NLMSG_NEXT(h, status)) {
+			// https://elixir.bootlin.com/linux/latest/source/net/wireless/nl80211.c#L8437
+
+			// For query NL80211_CMD_GET_SCAN, the answer is:
+			//		h->nlmsg_type == NL80211_CMD_NEW_SCAN_RESULTS
+
+			switch (h->nlmsg_type) {
+				case NL80211_CMD_NEW_SCAN_RESULTS: {
+					unsigned len = GENL_LEN(h);
+					FOREACH_NLA(nla, GENL_DATA(h), len) {
+						switch (nla->nla_type & NLA_TYPE_MASK) {
+							case NL80211_ATTR_BSS: {
+								unsigned len2 = nla->nla_len - NLA_HDRLEN;
+								FOREACH_NLA(nla_bss, NLA_DATA(nla), len2) {
+									switch (nla_bss->nla_type & NLA_TYPE_MASK) {
+										case NL80211_BSS_SIGNAL_MBM:
+											fprintf(stderr, "signal = %u; ", NLA_DATA_CAST(nla_bss, uint32_t));
+											break;
+										case NL80211_BSS_FREQUENCY:
+											fprintf(stderr, "freq:  %u; ", NLA_DATA_CAST(nla_bss, uint32_t));
+											break;
+									}
+								}
+								fputc('\n', stderr);
+								break;
+							}
+						}
+					}
+					break;
+				}
+				default:
+					break;
+			}
+		}
+	}
 }
 
 static bool cmd_wireless_recache(struct cmd_data_base *_data) {
@@ -187,8 +262,11 @@ static bool cmd_wireless_recache(struct cmd_data_base *_data) {
 	};
 	_Static_assert(sizeof (buffer) == 28, "it should be 28 bytes -> something happaned");
 
-	send(data->netlink_fd, &buffer, sizeof(buffer), 0);
-
+	// BUG: when sending the buffer -> a result is recieved on fdpoll -> rerunning output -> resending the buffer]
+	//		as a result we enter endless loop without sleep
+	// send(data->netlink_fd, &buffer, sizeof(buffer), 0);
+#if 0
+	handle_wireless_read(data);
 	char buf[4096];
 	int status = (int)recv(data->netlink_fd, buf, sizeof(buf), 0);
 	for (struct nlmsghdr *h = (struct nlmsghdr *)buf; NLMSG_OK(h, (unsigned)status); h = NLMSG_NEXT(h, status)) {
@@ -217,6 +295,7 @@ static bool cmd_wireless_recache(struct cmd_data_base *_data) {
 			}
 		}
 	}
+#endif
 
 	return true;
 }
@@ -245,5 +324,5 @@ DECLARE_CMD(cmd_wireless) = {
  *		the group itself - NL80211_MULTICAST_GROUP_SCAN (sends NL80211_CMD_NEW_SCAN_RESULTS packets)
  *		nl80211 groups - https://elixir.bootlin.com/linux/latest/source/net/wireless/nl80211.c#L52
  *		connect to multicast group - https://stackoverflow.com/questions/26265453/netlink-multicast-kernel-group
- *			it works using the function 'nl_socket_add_memberships'
+ *			it works using the function 'nl_socket_add_memberships' and 'genl_ctrl_resolve_grp'
  */
