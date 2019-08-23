@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-void fdpoll_add(int fd, void(*func_handle)(void *data), void *data);
-bool fdpoll_run(void);
+void fdpoll_add(int fd, bool(*func_handle)(void *data), void *data);
+int fdpoll_run(void);
 
 #endif // FDPOLL_H

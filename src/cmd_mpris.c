@@ -180,7 +180,7 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 			op = "Next";
 			break;
 		default:
-			return true;
+			return false;
 	}
 	sd_bus_error error = SD_BUS_ERROR_NULL;
 	int r = sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",

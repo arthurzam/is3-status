@@ -42,6 +42,8 @@ struct net_global_t g_net_global = {
 	.netlink_fd = -1
 };
 
+static bool handle_netlink_read(void *arg);
+
 static void setup_netlink(void) {
 	g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 	if (g_net_global.netlink_fd < 0) {
@@ -115,8 +117,9 @@ static struct net_if_addrs *net_find_if(const char *if_name) {
 	return NULL;
 }
 
-void handle_netlink_read(void *arg) {
+bool handle_netlink_read(void *arg) {
 	(void)arg;
+	bool res = false;
 	char buf[4096];
 	struct net_if_addrs *curr_if;
 	long status;
@@ -129,7 +132,7 @@ void handle_netlink_read(void *arg) {
 					fprintf(stderr, "read_netlink: some kind of error\n");
 					/* fall through */
 				case NLMSG_DONE: // Finished reading
-					return;
+					return res;
 				case RTM_DELLINK:
 					isDel = true;
 					/* fall through */
@@ -148,6 +151,7 @@ void handle_netlink_read(void *arg) {
 							curr_if->is_down = true;
 						else
 							curr_if->is_down = (char)((ifi->ifi_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
+						res = true;
 					}
 					break;
 				} case RTM_DELADDR:
@@ -181,6 +185,7 @@ void handle_netlink_read(void *arg) {
 							else if (ifa->ifa_family == AF_INET)
 								inet_ntop(AF_INET , address, curr_if->if_ip4, sizeof(curr_if->if_ip4));
 						}
+						res = true;
 					}
 					break;
 				}
@@ -192,4 +197,5 @@ void handle_netlink_read(void *arg) {
 	} else if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
 		fprintf(stderr, "recv(netlink) failed: %s\n", strerror(errno));
 	}
+	return res;
 }

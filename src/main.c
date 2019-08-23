@@ -74,10 +74,11 @@ static void setup_global_settings() {
 		g_general_settings.interval = 1;
 }
 
-static void handle_click_event(void *arg) {
+static bool handle_click_event(void *arg) {
 	struct runs_list *runs = arg;
 	char input[1024];
 	char errbuf[1024];
+	bool res = false;
 
 	while (fgets(input, sizeof(input), stdin)) {
 		char* walker = input;
@@ -110,8 +111,8 @@ static void handle_click_event(void *arg) {
 			FOREACH_RUN(run, runs) {
 				if ((0 == strcmp(run->vtable->name, name)) &&
 						(instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, instance))) {
-					if (run->vtable->func_cevent)
-						run->vtable->func_cevent(run->data, button);
+					if (run->vtable->func_cevent && run->vtable->func_cevent(run->data, button))
+						res = true;
 					break;
 				}
 			}
@@ -119,6 +120,7 @@ static void handle_click_event(void *arg) {
 			fprintf(stderr, "is3-status: unable to parse click event:\n>>> %s\n", input);
 		yajl_tree_free(node);
 	}
+	return res;
 }
 
 int main(int argc, char *argv[])
@@ -165,7 +167,8 @@ int main(int argc, char *argv[])
 	fdpoll_add(STDIN_FILENO, handle_click_event, &runs);
 	struct iovec iov[2] = {	{NULL, 0}, {"\n", 1} };
 
-	for (unsigned eventNum = 0; fdpoll_run(); ++eventNum) {
+	int fdpoll_res;
+	for (unsigned eventNum = 0; (fdpoll_res = fdpoll_run()) >= 0; ++eventNum) {
 		yajl_gen_array_open(json_gen);
 		FOREACH_RUN(run, &runs) {
 			yajl_gen_map_open(json_gen);
@@ -176,7 +179,7 @@ int main(int argc, char *argv[])
 				JSON_OUTPUT_KV(json_gen, "align", run->data->align);
 			if (run->instance)
 				JSON_OUTPUT_KV(json_gen, "instance", run->instance);
-			run->vtable->func_output(run->data, json_gen, (eventNum % run->data->interval == 0));
+			run->vtable->func_output(run->data, json_gen, (fdpoll_res > 0) || (eventNum % run->data->interval == 0));
 
 			yajl_gen_map_close(json_gen);
 		}

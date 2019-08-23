@@ -26,7 +26,7 @@
 #include <poll.h>
 
 struct fdpoll_data {
-	void (*func_handle)(void *);
+	bool (*func_handle)(void *);
 	void *data;
 };
 static struct {
@@ -35,7 +35,7 @@ static struct {
 	unsigned size;
 } g_fdpoll = {NULL, NULL, 0};
 
-void fdpoll_add(int fd, void (*func_handle)(void *), void *data) {
+void fdpoll_add(int fd, bool(*func_handle)(void *), void *data) {
 	const unsigned s = g_fdpoll.size;
 	g_fdpoll.size++;
 	g_fdpoll.fds = (struct pollfd *)realloc(g_fdpoll.fds, sizeof(struct pollfd) * g_fdpoll.size);
@@ -51,29 +51,30 @@ void fdpoll_add(int fd, void (*func_handle)(void *), void *data) {
 	g_fdpoll.data[s].func_handle = func_handle;
 }
 
-bool fdpoll_run(void) {
+int fdpoll_run(void) {
 	struct pollfd *const fds = g_fdpoll.fds;
 #ifdef PROFILE
 	static int counter = 10000;
 	if ((--counter) == 0)
-		return false;
+		return -1;
 	int ret = poll(fds, g_fdpoll.size, 0);
 #else
 	int ret = poll(fds, g_fdpoll.size, 1000);
 #endif
+	int res = 0;
 	if (ret < 0) {
 		fprintf(stderr, "poll failed with %s\n", strerror(errno));
-		return false;
+		return -1;
 	} else if (ret > 0) {
 		for (unsigned i = 0; i < g_fdpoll.size; i++) {
-			if (fds[i].revents & POLLIN)
-				g_fdpoll.data[i].func_handle(g_fdpoll.data[i].data);
-			else if(fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+			if (fds[i].revents & POLLIN) {
+				if (g_fdpoll.data[i].func_handle(g_fdpoll.data[i].data))
+					res = 1;
+			} else if(fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
 				fprintf(stderr, "is3-status: fd %d closed\n", fds[i].fd);
 				fds[i].fd = -1;
 			}
 		}
 	}
-
-	return true;
+	return res;
 }

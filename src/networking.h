@@ -34,6 +34,4 @@ extern struct net_global_t {
 
 unsigned net_add_if(const char *if_name);
 
-void handle_netlink_read(void *arg);
-
 #endif // NETWORKING_H
