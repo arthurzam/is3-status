@@ -31,8 +31,7 @@ struct cmd_disk_usage_data {
 	long threshold_degraded;
 	long threshold_critical;
 
-	const char *cached_color;
-	char cached_text[256];
+	char cached_output[256];
 };
 
 static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
@@ -42,7 +41,8 @@ static bool cmd_disk_usage_init(struct cmd_data_base *_data) {
 	if (!data->vfs_path)
 		data->vfs_path = strdup("/");
 	data->use_decimal = !!data->use_decimal;
-	data->cached_text[0] = '\0';
+
+	data->base.cached_fulltext = data->cached_output;
 	return true;
 }
 
@@ -55,14 +55,14 @@ static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py aAfFtuU
 VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00200042, 0x00300042});
 
-static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_disk_usage_recache(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 
 	struct statvfs buf;
 	int res;
 
-	if (update && statvfs(data->vfs_path, &buf) == 0) {
-		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_text, data->cached_text + sizeof(data->cached_text)};
+	if (statvfs(data->vfs_path, &buf) == 0) {
+		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			uint64_t value = 0;
 			switch (res | 0x20) { // convert to lower case
@@ -76,14 +76,13 @@ static bool cmd_disk_usage_output(struct cmd_data_base *_data, yajl_gen json_gen
 		}
 #define DISK_THRESHOLD_CMP(threshold) ((threshold) >= 0 ? (buf.f_bfree * buf.f_blocks < (uint64_t)(threshold)) : buf.f_bfree * 100 < (uint64_t)(-(threshold)) * buf.f_blocks )
 		if (DISK_THRESHOLD_CMP(data->threshold_critical))
-			data->cached_color = g_general_settings.color_bad;
+			CMD_COLOR_SET(data, g_general_settings.color_bad);
 		else if (DISK_THRESHOLD_CMP(data->threshold_degraded))
-			data->cached_color = g_general_settings.color_degraded;
+			CMD_COLOR_SET(data, g_general_settings.color_degraded);
+		else
+			CMD_COLOR_CLEAN(data);
 	}
 
-	if (data->cached_color)
-		JSON_OUTPUT_COLOR(json_gen, data->cached_color);
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_text);
 	return true;
 }
 
@@ -106,5 +105,5 @@ DECLARE_CMD(cmd_disk_usage) = {
 
 	.func_init = cmd_disk_usage_init,
 	.func_destroy = cmd_disk_usage_destroy,
-	.func_output = cmd_disk_usage_output
+	.func_recache = cmd_disk_usage_recache
 };

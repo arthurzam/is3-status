@@ -210,7 +210,7 @@ int test_cmd_array_correct(void) {
 	for (const struct cmd *iter = &__start_cmd_array; iter < &__stop_cmd_array; ++iter) {
 		if (!iter->name)
 			return TEST_ERR(ERR_STR("empty cmd name"));
-		if (!iter->func_init || !iter->func_destroy || !iter->func_output)
+		if (!iter->func_init || !iter->func_destroy || !iter->func_recache)
 			return TEST_ERR(ERR_STR("cmd %s: must have function is empty"), iter->name);
 
 		for(unsigned i = 1; i < iter->opts.size; ++i)

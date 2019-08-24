@@ -40,6 +40,8 @@ struct cmd_mpris_data {
 		long length;
 		long position;
 	} data;
+
+	char cached_output[256];
 };
 
 #define DBUS_MPRIS_FIELDS(F) \
@@ -91,6 +93,7 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	sd_bus_error_free(&error);
 	sd_bus_message_unref(reply);
 
+	data->base.cached_fulltext = data->cached_output;
 	return true;
 }
 
@@ -112,23 +115,22 @@ static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./gen-format.py AalpTt
 VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x00111002});
 
-static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_mpris_recache(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
-	(void)update;
 
-	const char *output_format = data->format_stopped, *color = NULL;
+	const char *output_format = data->format_stopped;
 	if (data->data.playback_status == NULL);
 	else if (0 == memcmp(data->data.playback_status, "Playing", 8)) {
 		output_format = data->format_playing;
-		color = g_general_settings.color_good;
+		CMD_COLOR_SET(data, g_general_settings.color_good);
 	} else if (0 == memcmp(data->data.playback_status, "Paused", 7)) {
 		output_format = data->format_paused;
-		color = g_general_settings.color_degraded;
-	}
+		CMD_COLOR_SET(data, g_general_settings.color_degraded);
+	} else
+		CMD_COLOR_CLEAN(data);
 
 	int res;
-	char buffer[256];
-	struct vprint ctx = {cmd_mpris_var_options, output_format, buffer, buffer + sizeof(buffer)};
+	struct vprint ctx = {cmd_mpris_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		switch (res) {
 			case 'A':
@@ -160,9 +162,6 @@ static bool cmd_mpris_output(struct cmd_data_base *_data, yajl_gen json_gen, boo
 				break;
 		}
 	}
-	if (color)
-		JSON_OUTPUT_COLOR(json_gen, color);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 	return true;
 }
 
@@ -208,6 +207,6 @@ DECLARE_CMD(cmd_mpris) = {
 
 	.func_init = cmd_mpris_init,
 	.func_destroy = cmd_mpris_destroy,
-	.func_output = cmd_mpris_output,
+	.func_recache = cmd_mpris_recache,
 	.func_cevent = cmd_mpris_cevent
 };

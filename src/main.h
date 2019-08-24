@@ -20,8 +20,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-
-#include <yajl_gen.h>
+#include <stddef.h>
 
 extern struct general_settings_t {
 	const char *align;
@@ -68,6 +67,8 @@ struct cmd_opts {
 struct cmd_data_base {
 	const char *align;
 	long interval;
+	char *cached_fulltext;
+	char cached_color[8];
 };
 
 enum click_event {
@@ -80,7 +81,7 @@ enum click_event {
 
 #define CMD_USE_ALIGNMENT 8
 struct cmd {
-	bool(*func_output)(struct cmd_data_base *data, yajl_gen json_gen, bool update);
+	bool(*func_recache)(struct cmd_data_base *data);
 	bool(*func_cevent)(struct cmd_data_base *data, int event);
 	/**
 	 * @brief Initialize the instance
@@ -101,14 +102,11 @@ struct cmd {
 } __attribute__ ((aligned (CMD_USE_ALIGNMENT)));
 #define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array"), aligned(CMD_USE_ALIGNMENT)))
 
-__attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const char *key, size_t key_size, const char *value, size_t value_size) {
-	yajl_gen_string(json_gen, (const unsigned char *)key, key_size);
-	yajl_gen_string(json_gen, (const unsigned char *)value, value_size);
-}
-#define JSON_OUTPUT_K(json_gen,key,value,value_size) json_output((json_gen), (key), strlen(key), value, value_size)
-#define JSON_OUTPUT_KV(json_gen,key,value) JSON_OUTPUT_K(json_gen, key, value, strlen(value))
-#define JSON_OUTPUT_COLOR(json_gen,value) json_output((json_gen), "color", 5, (value), 7)
+#define CMD_COLOR_SET(data, color) memcpy((data)->base.cached_color, (color), 8)
+#define CMD_COLOR_CLEAN(data) (data)->base.cached_color[0] = '\0'
 
 #define X_STRLEN(str) ((sizeof(str)/sizeof(str[0]))-sizeof(str[0]))
+
+_Static_assert(sizeof(char) == 1, "If it isn't of size 1 byte, a lot of code is incorrect!");
 
 #endif // GENERAL_H

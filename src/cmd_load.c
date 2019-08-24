@@ -29,6 +29,7 @@ struct cmd_load_data {
 
 static bool cmd_load_init(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
+	data->base.cached_fulltext = data->cached_output;
 	return data->format;
 }
 
@@ -40,19 +41,17 @@ static void cmd_load_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py 123
 VPRINT_OPTS(cmd_load_var_options, {0x00000000, 0x000E0000, 0x00000000, 0x00000000});
 
-static bool cmd_load_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_load_recache(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 
 	double loadavg[3];
-	if (update && getloadavg(loadavg, 3) != -1) {
+	if (getloadavg(loadavg, 3) != -1) {
 		int res;
 		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
 			vprint_dtoa(&ctx, loadavg[res - '1']);
 		}
 	}
-
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_output);
 
 	return true;
 }
@@ -72,5 +71,5 @@ DECLARE_CMD(cmd_load) = {
 
 	.func_init = cmd_load_init,
 	.func_destroy = cmd_load_destroy,
-	.func_output = cmd_load_output
+	.func_recache = cmd_load_recache
 };

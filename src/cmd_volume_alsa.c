@@ -36,6 +36,8 @@ struct cmd_volume_alsa_data {
 	char *mixer_name;
 	long mixer_idx;
 	long wheel_step;
+
+	char cached_output[256];
 };
 
 static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
@@ -93,6 +95,7 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	data->volume_min = min;
 	data->volume_range = max - min;
 
+	data->base.cached_fulltext = data->cached_output;
 	return true;
 _error_mixer:
 	snd_mixer_close(data->mixer);
@@ -111,9 +114,8 @@ static void cmd_volume_alsa_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./gen-format.py vV
 VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
-static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
-	(void)update;
 
 	int res;
 
@@ -123,24 +125,22 @@ static bool cmd_volume_alsa_output(struct cmd_data_base *_data, yajl_gen json_ge
 
 	const int volume = (int)(((mixer_volume - data->volume_min) * 100 + data->volume_range / 2) / data->volume_range);
 	const char *output_format = data->format;
+	CMD_COLOR_CLEAN(data);
 	if (data->supportes_mute) {
 		int pbval;
 		if ((res = snd_mixer_selem_get_playback_switch(data->elem, 0, &pbval)) < 0)
 			fprintf(stderr, "is3-status: ALSA: get_playback_switch: %s\n", snd_strerror(res));
 		if (!pbval) {
-			JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_degraded);
+			CMD_COLOR_SET(data, g_general_settings.color_degraded);
 			if (data->format_muted)
 				output_format = data->format_muted;
 		}
 	}
 
-	char buffer[256];
-	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, buffer, buffer + sizeof(buffer)};
+	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		vprint_itoa(&ctx, volume);
 	}
-
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 
 	return true;
 }
@@ -205,6 +205,6 @@ DECLARE_CMD(cmd_volume_alsa) = {
 
 	.func_init = cmd_volume_alsa_init,
 	.func_destroy = cmd_volume_alsa_destroy,
-	.func_output = cmd_volume_alsa_output,
+	.func_recache = cmd_volume_alsa_recache,
 	.func_cevent = cmd_volume_alsa_cevent
 };

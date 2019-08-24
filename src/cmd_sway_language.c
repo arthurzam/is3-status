@@ -33,12 +33,16 @@ struct cmd_sway_language_data {
 	struct cmd_data_base base;
 	char *keyboard_name;
 	char *buffer;
-	char *cached_layout;
 	unsigned buffer_size;
 	int socketfd;
 };
 
-static char ipc_magic[] = {'i', '3', '-', 'i', 'p', 'c'};
+struct msg_header_t {
+	char magic[6];
+	uint32_t size;
+	uint32_t type;
+} __attribute__((packed));
+_Static_assert(sizeof (struct msg_header_t) == 14, "incorrect size for struct msg_header_t");
 
 static char *cmd_sway_language_get_socketpath(void) {
 	const char *sock = getenv("SWAYSOCK");
@@ -90,12 +94,12 @@ static int cmd_sway_language_open_socket(void) {
 static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 	/* send msg on IPC */
 	{
-		struct {
-			uint32_t len;
-			uint32_t type;
-		} send_buf = {0, 100};
-		struct iovec iov[2] = { {ipc_magic, sizeof(ipc_magic)}, {&send_buf, sizeof(send_buf)} };
-		if (0 > writev(data->socketfd, iov, 2)) {
+		static const struct msg_header_t msg = {
+			.magic = {'i', '3', '-', 'i', 'p', 'c'},
+			.size = 0,
+			.type = 100
+		};
+		if (0 > write(data->socketfd, &msg, sizeof(msg))) {
 			fprintf(stderr, "is3-status: sway-language: unable to send request, error %s\n", strerror(errno));
 			return false;
 		}
@@ -103,14 +107,10 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 
 	/* recv msg on IPC */
 	{
-		struct __attribute__((packed)) {
-			char magic[sizeof(ipc_magic)];
-			uint32_t size;
-			uint32_t type;
-		} recv_buf;
+		struct msg_header_t recv_buf;
 		size_t total = 0;
 		while (total < sizeof(recv_buf)) {
-			ssize_t received = recv(data->socketfd, (char*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
+			ssize_t received = recv(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
 			if (received <= 0) {
 				fprintf(stderr, "is3-status: sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return false;
@@ -158,8 +158,10 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 						xkb_active_layout_name = YAJL_GET_STRING(value);
 					}
 					if (found && xkb_active_layout_name) {
-						if (!data->cached_layout || 0 != strcmp(xkb_active_layout_name, data->cached_layout))
-							data->cached_layout = strdup(xkb_active_layout_name);
+						if (!data->base.cached_fulltext || 0 != strcmp(xkb_active_layout_name, data->base.cached_fulltext)) {
+							free(data->base.cached_fulltext);
+							data->base.cached_fulltext = strdup(xkb_active_layout_name);
+						}
 						yajl_tree_free(node);
 						return true;
 					}
@@ -188,16 +190,13 @@ static void cmd_sway_language_destroy(struct cmd_data_base *_data) {
 	close(data->socketfd);
 	free(data->buffer);
 	free(data->keyboard_name);
-	free(data->cached_layout);
+	free(data->base.cached_fulltext);
 }
 
-static bool cmd_sway_language_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_sway_language_recache(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 
-	if (update && !cmd_sway_language_query(data))
-		return false;
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_layout);
-	return true;
+	return cmd_sway_language_query(data);
 }
 
 #define SWAY_LANG_OPTIONS(F) \
@@ -215,5 +214,5 @@ DECLARE_CMD(cmd_sway_language) = {
 
 	.func_init = cmd_sway_language_init,
 	.func_destroy = cmd_sway_language_destroy,
-	.func_output = cmd_sway_language_output
+	.func_recache = cmd_sway_language_recache
 };

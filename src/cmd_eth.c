@@ -30,6 +30,8 @@ struct cmd_eth_data {
 	char *interface;
 
 	unsigned if_pos;
+
+	char cached_output[256];
 };
 
 static bool cmd_eth_init(struct cmd_data_base *_data) {
@@ -38,6 +40,8 @@ static bool cmd_eth_init(struct cmd_data_base *_data) {
 		return false;
 	if (!data->format_up)
 		data->format_up = strdup("%a");
+
+	data->base.cached_fulltext = data->cached_output;
 
 	data->if_pos = net_add_if(data->interface);
 	// data->interface is used in inner networking array
@@ -55,17 +59,15 @@ static void cmd_eth_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./gen-format.py Aa46
 VPRINT_OPTS(cmd_eth_var_options, {0x00000000, 0x00500000, 0x00000002, 0x00000002});
 
-static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_eth_recache(struct cmd_data_base *_data) {
 	struct cmd_eth_data *data = (struct cmd_eth_data *)_data;
-	(void)update;
 
 	struct net_if_addrs *curr_if = g_net_global.ifs_arr + data->if_pos;
 	const char *output_format = (curr_if->is_down && data->format_down) ? data->format_down : data->format_up;
-	const char *color = curr_if->is_down ? g_general_settings.color_bad : g_general_settings.color_good;
 
+	bool noIP = false;
 	int res;
-	char buffer[256];
-	struct vprint ctx = {cmd_eth_var_options, output_format, buffer, buffer + sizeof(buffer)};
+	struct vprint ctx = {cmd_eth_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		const char *addr = NULL;
 		switch (res) {
@@ -88,13 +90,17 @@ static bool cmd_eth_output(struct cmd_data_base *_data, yajl_gen json_gen, bool 
 		}
 		if (!addr) {
 			addr = "no IP";
-			color = g_general_settings.color_degraded;
+			noIP = true;
 		}
 		vprint_strcat(&ctx, addr);
 	}
+	if (curr_if->is_down)
+		CMD_COLOR_SET(data, g_general_settings.color_bad);
+	else if (noIP)
+		CMD_COLOR_SET(data, g_general_settings.color_degraded);
+	else
+		CMD_COLOR_SET(data, g_general_settings.color_good);
 
-	JSON_OUTPUT_COLOR(json_gen, color);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
 	return true;
 }
 
@@ -114,5 +120,5 @@ DECLARE_CMD(cmd_eth) = {
 
 	.func_init = cmd_eth_init,
 	.func_destroy = cmd_eth_destroy,
-	.func_output = cmd_eth_output
+	.func_recache = cmd_eth_recache
 };

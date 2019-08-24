@@ -24,10 +24,16 @@
 
 #include <yajl_version.h>
 #include <yajl_tree.h>
+#include <yajl_gen.h>
 
 #include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
+
+__attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const char *key, size_t key_size, const char *value, size_t value_size) {
+	yajl_gen_string(json_gen, (const unsigned char *)key, key_size);
+	yajl_gen_string(json_gen, (const unsigned char *)value, value_size);
+}
 
 static FILE *open_config(const char *defPath) {
 	if (defPath && access(defPath, R_OK) == 0)
@@ -64,12 +70,12 @@ static FILE *open_config(const char *defPath) {
 }
 
 static void setup_global_settings() {
-	if (g_general_settings.color_good[0] == '\0')
-		memcpy(g_general_settings.color_good, "#00FF00", 8);
-	if (g_general_settings.color_degraded[0] == '\0')
-		memcpy(g_general_settings.color_degraded, "#FFFF00", 8);
 	if (g_general_settings.color_bad[0] == '\0')
 		memcpy(g_general_settings.color_bad, "#FF0000", 8);
+	if (g_general_settings.color_degraded[0] == '\0')
+		memcpy(g_general_settings.color_degraded, "#FFFF00", 8);
+	if (g_general_settings.color_good[0] == '\0')
+		memcpy(g_general_settings.color_good, "#00FF00", 8);
 	if (g_general_settings.interval == 0)
 		g_general_settings.interval = 1;
 }
@@ -173,13 +179,20 @@ int main(int argc, char *argv[])
 		FOREACH_RUN(run, &runs) {
 			yajl_gen_map_open(json_gen);
 
-			JSON_OUTPUT_KV(json_gen, "name", run->vtable->name);
-			JSON_OUTPUT_KV(json_gen, "markup", "none");
+#define JSON_OUTPUT(key,value) json_output(json_gen, (key), strlen(key), value, strlen(value))
+
+			JSON_OUTPUT("name", run->vtable->name);
+			JSON_OUTPUT("markup", "none");
 			if (run->data->align)
-				JSON_OUTPUT_KV(json_gen, "align", run->data->align);
+				JSON_OUTPUT("align", run->data->align);
 			if (run->instance)
-				JSON_OUTPUT_KV(json_gen, "instance", run->instance);
-			run->vtable->func_output(run->data, json_gen, (fdpoll_res > 0) || (eventNum % run->data->interval == 0));
+				JSON_OUTPUT("instance", run->instance);
+			if ((fdpoll_res > 0) || (eventNum % run->data->interval == 0))
+				run->vtable->func_recache(run->data);
+			if (run->data->cached_fulltext)
+				JSON_OUTPUT("full_text", run->data->cached_fulltext);
+			if (run->data->cached_color[0])
+				json_output(json_gen, "color", 5, run->data->cached_color, 7);
 
 			yajl_gen_map_close(json_gen);
 		}

@@ -31,8 +31,6 @@ struct cmd_x11_language_data {
 	char *lan2_upper;
 
 	Display *dpy;
-	unsigned cached_index;
-	unsigned cached_color;
 
 	char *display;
 };
@@ -76,19 +74,22 @@ static void cmd_x11_language_destroy(struct cmd_data_base *_data) {
 	XCloseDisplay(data->dpy);
 }
 
-static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_x11_language_recache(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
-	if (update) {
-		XKeyboardState values;
-		XGetKeyboardControl(data->dpy, &values);
-		const unsigned long lan = values.led_mask;
+	XKeyboardState values;
+	XGetKeyboardControl(data->dpy, &values);
+	const unsigned long lan = values.led_mask;
 
 #define BIT_MOVE(val,src,dst) (((val) & (1U << (src))) >> ((src) - (dst)))
 
-		data->cached_index = BIT_MOVE(lan, 12, 1) | BIT_MOVE(lan, 0, 0);
-		data->cached_color = ((lan & 0x2U) == 0);
-	}
+	unsigned cached_index = BIT_MOVE(lan, 12, 1) | BIT_MOVE(lan, 0, 0);
+	data->base.cached_fulltext = *(&data->lan1_def + cached_index);
+
+	if ((lan & 0x2U) == 0)
+		CMD_COLOR_SET(data, g_general_settings.color_degraded);
+	else
+		CMD_COLOR_CLEAN(data);
 
 #define BAT_POS_CHECK(pos, field) \
 	_Static_assert(offsetof(struct cmd_x11_language_data, field) - offsetof(struct cmd_x11_language_data, lan1_def) == (pos) * sizeof(char *), \
@@ -98,10 +99,6 @@ static bool cmd_x11_language_output(struct cmd_data_base *_data, yajl_gen json_g
 			BAT_POS_CHECK(2, lan2_def);
 			BAT_POS_CHECK(3, lan2_upper);
 #undef BAT_POS_CHECK
-
-	if (data->cached_color)
-		JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_degraded);
-	JSON_OUTPUT_KV(json_gen, "full_text", *(&data->lan1_def + data->cached_index));
 
 	return true;
 }
@@ -123,5 +120,5 @@ DECLARE_CMD(cmd_x11_language) = {
 
 	.func_init = cmd_x11_language_init,
 	.func_destroy = cmd_x11_language_destroy,
-	.func_output = cmd_x11_language_output
+	.func_recache = cmd_x11_language_recache
 };

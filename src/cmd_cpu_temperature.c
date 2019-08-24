@@ -29,6 +29,7 @@ struct cmd_cpu_temperature_data {
 	char *path;
 	long high_threshold;
 	int curr_value;
+	char cached_output[128];
 };
 
 static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
@@ -45,10 +46,8 @@ static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 		data->path = strdup("/sys/class/thermal/thermal_zone0/temp");
 	data->curr_value = -1;
 
-	if (access(data->path, R_OK) != 0)
-		return false;
-
-	return true;
+	data->base.cached_fulltext = data->cached_output;
+	return access(data->path, R_OK) == 0;
 }
 
 static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
@@ -60,10 +59,10 @@ static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py cf
 VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
-static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
-	if (update || data->curr_value == -1) {
+	if (data->curr_value == -1) {
 		char buf[64];
 		FILE *f;
 		if ((f = fopen(data->path, "r")) && fgets(buf, sizeof(buf), f))
@@ -74,8 +73,7 @@ static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen jso
 	}
 
 	int res;
-	char buffer[256];
-	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, buffer, buffer + sizeof(buffer)};
+	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		if (data->curr_value == -1)
 			vprint_strcat(&ctx, "???");
@@ -87,8 +85,9 @@ static bool cmd_cpu_temperature_output(struct cmd_data_base *_data, yajl_gen jso
 		}
 	}
 	if (data->high_threshold > 0 && data->high_threshold < data->curr_value)
-		JSON_OUTPUT_COLOR(json_gen, g_general_settings.color_bad);
-	JSON_OUTPUT_K(json_gen, "full_text", buffer, (size_t)(ctx.buffer_start - buffer));
+		CMD_COLOR_SET(data, g_general_settings.color_bad);
+	else
+		CMD_COLOR_CLEAN(data);
 
 	return true;
 }
@@ -110,5 +109,5 @@ DECLARE_CMD(cmd_cpu_temperature) = {
 
 	.func_init = cmd_cpu_temperature_init,
 	.func_destroy = cmd_cpu_temperature_destroy,
-	.func_output = cmd_cpu_temperature_output
+	.func_recache = cmd_cpu_temperature_recache
 };

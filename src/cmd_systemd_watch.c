@@ -25,7 +25,6 @@
 
 struct cmd_systemd_watch_data {
 	struct cmd_data_base base;
-	char *cached_result;
 	sd_bus *bus;
 	char *unit_path;
 
@@ -70,28 +69,24 @@ static void cmd_systemd_watch_destroy(struct cmd_data_base *_data) {
 	sd_bus_unref(data->bus);
 	free(data->service_name);
 	free(data->unit_path);
-	free(data->cached_result);
+	free(data->base.cached_fulltext);
 }
 
-static bool cmd_systemd_watch_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_systemd_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_systemd_watch_data *data = (struct cmd_systemd_watch_data *)_data;
 
-	if (update) {
-		sd_bus_error error = SD_BUS_ERROR_NULL;
-		int r;
+	sd_bus_error error = SD_BUS_ERROR_NULL;
+	int r;
 
-		free(data->cached_result);
-		data->cached_result = NULL;
-		if (0 > (r = sd_bus_get_property_string(data->bus,
-												"org.freedesktop.systemd1", data->unit_path,
-												"org.freedesktop.systemd1.Unit", "ActiveState",
-												&error, &data->cached_result))) {
-			fprintf(stderr, "is3-status: systemd_watch: Failed to get property \'ActiveState\': %s\n", error.message);
-		}
-		sd_bus_error_free(&error);
+	free(data->base.cached_fulltext);
+	data->base.cached_fulltext = NULL;
+	if (0 > (r = sd_bus_get_property_string(data->bus,
+											"org.freedesktop.systemd1", data->unit_path,
+											"org.freedesktop.systemd1.Unit", "ActiveState",
+											&error, &data->base.cached_fulltext))) {
+		fprintf(stderr, "is3-status: systemd_watch: Failed to get property \'ActiveState\': %s\n", error.message);
 	}
-
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_result);
+	sd_bus_error_free(&error);
 
 	return true;
 }
@@ -112,5 +107,5 @@ DECLARE_CMD(cmd_systemd_watch) = {
 
 	.func_init = cmd_systemd_watch_init,
 	.func_destroy = cmd_systemd_watch_destroy,
-	.func_output = cmd_systemd_watch_output
+	.func_recache = cmd_systemd_watch_recache
 };

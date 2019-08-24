@@ -31,7 +31,6 @@ struct cmd_memory_data {
 	long threshold_degraded;
 	long threshold_critical;
 
-	const char *cached_color;
 	char cached_output[256];
 };
 
@@ -43,6 +42,7 @@ static bool cmd_memory_init(struct cmd_data_base *_data) {
 
 	data->use_decimal = !!data->use_decimal;
 	data->use_method_classical = !!data->use_method_classical;
+	data->base.cached_fulltext = data->cached_output;
 
 	return true;
 }
@@ -106,11 +106,11 @@ _exit:
 // generaterd using command ./scripts/gen-format.py AaFfSstUu
 VPRINT_OPTS(cmd_memory_data_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
 
-static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_memory_recache(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 
 	struct memory_info_t info = {0};
-	if (update && cmd_memory_file(&info)) {
+	if (cmd_memory_file(&info)) {
 		int res;
 		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
@@ -129,15 +129,15 @@ static bool cmd_memory_output(struct cmd_data_base *_data, yajl_gen json_gen, bo
 			vprint_human_bytes(&ctx, (uint64_t)value, ((res & 0x20) == 0 ? (uint64_t)info.ram_total : 0), 1, data->use_decimal);
 		}
 #define MEM_THRESHOLD_CMP(threshold) (info.ram_free < ((threshold) >= 0 ? (threshold) : -(threshold) * info.ram_total / 100))
+
 		if (MEM_THRESHOLD_CMP(data->threshold_critical))
-			data->cached_color = g_general_settings.color_bad;
+			CMD_COLOR_SET(data, g_general_settings.color_bad);
 		else if (MEM_THRESHOLD_CMP(data->threshold_degraded))
-			data->cached_color = g_general_settings.color_degraded;
+			CMD_COLOR_SET(data, g_general_settings.color_degraded);
+		else
+			CMD_COLOR_CLEAN(data);
 	}
 
-	if (data->cached_color)
-		JSON_OUTPUT_COLOR(json_gen, data->cached_color);
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_output);
 	return true;
 }
 
@@ -160,5 +160,5 @@ DECLARE_CMD(cmd_memory) = {
 
 	.func_init = cmd_memory_init,
 	.func_destroy = cmd_memory_destroy,
-	.func_output = cmd_memory_output
+	.func_recache = cmd_memory_recache
 };

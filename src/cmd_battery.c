@@ -34,7 +34,6 @@ struct cmd_battery_data {
 	long threshold_time;
 	long threshold_pct;
 
-	const char *cached_color;
 	char cached_output[256];
 };
 
@@ -69,6 +68,7 @@ static bool cmd_battery_init(struct cmd_data_base *_data) {
 
 	data->last_full_capacity = !!data->last_full_capacity;
 
+	data->base.cached_fulltext = data->cached_output;
 	return true;
 }
 
@@ -149,84 +149,83 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 // generaterd using command ./scripts/gen-format.py bBt
 VPRINT_OPTS(cmd_battery_data_var_options, {0x00000000, 0x00000000, 0x00000004, 0x00100004});
 
-static bool cmd_battery_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_battery_recache(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
-	if (update) {
-		struct battery_info_t info = {BAT_STS_DISCHARGIUNG, -1, -1, -1, -1, -1, -1};
-		int full_design = -1;
+	struct battery_info_t info = {BAT_STS_DISCHARGIUNG, -1, -1, -1, -1, -1, -1};
+	int full_design = -1;
 
-		/* read file */
-		{
-			FILE *batFile = fopen(data->path, "r");
-			if (batFile) {
-				cmd_battery_parse_file(batFile, &info);
-				fclose(batFile);
+	/* read file */
+	{
+		FILE *batFile = fopen(data->path, "r");
+		if (batFile) {
+			cmd_battery_parse_file(batFile, &info);
+			fclose(batFile);
 
-				full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
-				if (info.remainingAh != -1 && info.remainingW == -1) {
-					if (info.present_rate > 0 && info.voltage != -1) {
-						info.present_rate = (int)((float)info.voltage * (float)info.present_rate / 1000000);
-						info.remainingW = (int)((float)info.voltage * (float)info.remainingAh / 1000000);
-						full_design = (int)((float)info.voltage * (float)full_design / 1000000);
-					} else
-						info.remainingW = info.remainingAh;
-				}
-
-				if (full_design == -1 || info.remainingW == -1)
-					info.status = BAT_STS_MISSING;
-			} else
-				info.status = BAT_STS_MISSING;
-		}
-
-		double remaining_pct = info.remainingW * 100.0 / full_design;
-		if (data->last_full_capacity && remaining_pct > 100.0)
-			remaining_pct = 100.0;
-
-		int remaining_time = 0;
-		if (info.present_rate > 0) {
-			const int val = (info.status == BAT_STS_CHARGIUNG ? full_design - info.remainingW :
-							 info.status == BAT_STS_DISCHARGIUNG ? info.remainingW : 0);
-			remaining_time = val * 3600 / info.present_rate;
-		}
-
-		data->cached_color = (info.status == BAT_STS_FULL ? g_general_settings.color_good :
-							  info.status == BAT_STS_CHARGIUNG ? g_general_settings.color_degraded : NULL);
-		if (info.status == BAT_STS_DISCHARGIUNG && (remaining_pct < (int)data->threshold_pct || remaining_time < data->threshold_time))
-			data->cached_color = g_general_settings.color_bad;
-
-		/* Static check for format relative position */
-		{
-#define BAT_POS_CHECK(pos, field) \
-	_Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_battery_data, format_missing) == (pos) * sizeof(char *), \
-		"Wrong position for " # field)
-			BAT_POS_CHECK(BAT_STS_MISSING, format_missing);
-			BAT_POS_CHECK(BAT_STS_DISCHARGIUNG, format_discharging);
-			BAT_POS_CHECK(BAT_STS_CHARGIUNG, format_charging);
-			BAT_POS_CHECK(BAT_STS_FULL, format_full);
-#undef BAT_POS_CHECK
-		}
-		const char *output_format = *(&data->format_missing + info.status);
-		int res;
-		struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
-			switch (res) {
-				case 'b':
-					vprint_itoa(&ctx, (int)remaining_pct);
-					break;
-				case 'B':
-					vprint_dtoa(&ctx, remaining_pct);
-					break;
-				case 't':
-					vprint_time(&ctx, remaining_time);
-					break;
+			full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
+			if (info.remainingAh != -1 && info.remainingW == -1) {
+				if (info.present_rate > 0 && info.voltage != -1) {
+					info.present_rate = (int)((float)info.voltage * (float)info.present_rate / 1000000);
+					info.remainingW = (int)((float)info.voltage * (float)info.remainingAh / 1000000);
+					full_design = (int)((float)info.voltage * (float)full_design / 1000000);
+				} else
+					info.remainingW = info.remainingAh;
 			}
+
+			if (full_design == -1 || info.remainingW == -1)
+				info.status = BAT_STS_MISSING;
+		} else
+			info.status = BAT_STS_MISSING;
+	}
+
+	double remaining_pct = info.remainingW * 100.0 / full_design;
+	if (data->last_full_capacity && remaining_pct > 100.0)
+		remaining_pct = 100.0;
+
+	int remaining_time = 0;
+	if (info.present_rate > 0) {
+		const int val = (info.status == BAT_STS_CHARGIUNG ? full_design - info.remainingW :
+						 info.status == BAT_STS_DISCHARGIUNG ? info.remainingW : 0);
+		remaining_time = val * 3600 / info.present_rate;
+	}
+
+	if (info.status == BAT_STS_FULL)
+		CMD_COLOR_SET(data, g_general_settings.color_good);
+	else if (info.status == BAT_STS_CHARGIUNG)
+		CMD_COLOR_SET(data, g_general_settings.color_degraded);
+	else if (info.status == BAT_STS_DISCHARGIUNG && (remaining_pct < (int)data->threshold_pct || remaining_time < data->threshold_time))
+		CMD_COLOR_SET(data, g_general_settings.color_bad);
+	else
+		CMD_COLOR_CLEAN(data);
+
+	/* Static check for format relative position */
+	{
+#define BAT_POS_CHECK(pos, field) \
+_Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_battery_data, format_missing) == (pos) * sizeof(char *), \
+	"Wrong position for " # field)
+		BAT_POS_CHECK(BAT_STS_MISSING, format_missing);
+		BAT_POS_CHECK(BAT_STS_DISCHARGIUNG, format_discharging);
+		BAT_POS_CHECK(BAT_STS_CHARGIUNG, format_charging);
+		BAT_POS_CHECK(BAT_STS_FULL, format_full);
+#undef BAT_POS_CHECK
+	}
+	const char *output_format = *(&data->format_missing + info.status);
+	int res;
+	struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+	while ((res = vprint_walk(&ctx)) >= 0) {
+		switch (res) {
+			case 'b':
+				vprint_itoa(&ctx, (int)remaining_pct);
+				break;
+			case 'B':
+				vprint_dtoa(&ctx, remaining_pct);
+				break;
+			case 't':
+				vprint_time(&ctx, remaining_time);
+				break;
 		}
 	}
 
-	if (data->cached_color)
-		JSON_OUTPUT_COLOR(json_gen, data->cached_color);
-	JSON_OUTPUT_KV(json_gen, "full_text", data->cached_output);
 	return true;
 }
 
@@ -252,5 +251,5 @@ DECLARE_CMD(cmd_battery) = {
 
 	.func_init = cmd_battery_init,
 	.func_destroy = cmd_battery_destroy,
-	.func_output = cmd_battery_output
+	.func_recache = cmd_battery_recache
 };

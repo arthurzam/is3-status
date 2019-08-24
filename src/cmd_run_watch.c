@@ -41,21 +41,18 @@ static void cmd_run_watch_destroy(struct cmd_data_base *_data) {
 	free(data->path);
 }
 
-static bool cmd_run_watch_output(struct cmd_data_base *_data, yajl_gen json_gen, bool update) {
+static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 
-	if (update) {
-		FILE *pid_file = fopen(data->path, "r");
-		if (!pid_file)
-			return false;
-		char buffer[128];
-		if (fgets(buffer, sizeof(buffer), pid_file) != NULL)
-			data->pid = (pid_t)strtol(buffer, NULL, 10);
-		fclose(pid_file);
-	}
+	FILE *pid_file = fopen(data->path, "r");
+	if (!pid_file)
+		return false;
+	char buffer[128];
+	if (fgets(buffer, sizeof(buffer), pid_file) != NULL)
+		data->pid = (pid_t)strtol(buffer, NULL, 10);
+	fclose(pid_file);
 
-	const char *text = (kill(data->pid, 0) == 0 || errno == EPERM) ? "Running" : "Not Running";
-	JSON_OUTPUT_KV(json_gen, "full_text", text);
+	data->base.cached_fulltext = (kill(data->pid, 0) == 0 || errno == EPERM) ? "Running" : "Not Running";
 
 	return true;
 }
@@ -75,5 +72,5 @@ DECLARE_CMD(cmd_run_watch) = {
 
 	.func_init = cmd_run_watch_init,
 	.func_destroy = cmd_run_watch_destroy,
-	.func_output = cmd_run_watch_output
+	.func_recache = cmd_run_watch_recache
 };
