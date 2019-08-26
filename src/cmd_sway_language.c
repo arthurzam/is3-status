@@ -69,12 +69,12 @@ static int cmd_sway_language_open_socket(void) {
 	int socketfd;
 	char *socket_path;
 
-	if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		fputs("is3-status: sway-language: Unable to open Unix socket\n", stderr);
+	if ((socket_path = cmd_sway_language_get_socketpath()) == NULL) {
+		fputs("sway-language: Unable to find Sway socket\n", stderr);
 		return -1;
 	}
-	if ((socket_path = cmd_sway_language_get_socketpath()) == NULL) {
-		fputs("is3-status: sway-language: Unable to find Sway socket\n", stderr);
+	if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+		fputs("sway-language: Unable to open Unix socket\n", stderr);
 		return -1;
 	}
 	struct sockaddr_un addr;
@@ -82,7 +82,7 @@ static int cmd_sway_language_open_socket(void) {
 	strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
 	addr.sun_path[sizeof(addr.sun_path) - 1] = 0;
 	if (connect(socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
-		fprintf(stderr, "is3-status: sway-language: Unable to connect to %s\n", socket_path);
+		fprintf(stderr, "sway-language: Unable to connect to %s\n", socket_path);
 		close(socketfd);
 		free(socket_path);
 		return -1;
@@ -100,7 +100,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 			.type = 100
 		};
 		if (0 > write(data->socketfd, &msg, sizeof(msg))) {
-			fprintf(stderr, "is3-status: sway-language: unable to send request, error %s\n", strerror(errno));
+			fprintf(stderr, "sway-language: unable to send request, error %s\n", strerror(errno));
 			return false;
 		}
 	}
@@ -112,7 +112,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 		while (total < sizeof(recv_buf)) {
 			ssize_t received = recv(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
 			if (received <= 0) {
-				fprintf(stderr, "is3-status: sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
+				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return false;
 			}
 			total += (size_t)received;
@@ -126,7 +126,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 		while (total < recv_buf.size) {
 			ssize_t received = recv(data->socketfd, data->buffer + total, recv_buf.size - total, 0);
 			if (received <= 0) {
-				fprintf(stderr, "is3-status: sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
+				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return false;
 			}
 			total += (size_t)received;

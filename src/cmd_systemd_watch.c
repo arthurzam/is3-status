@@ -41,7 +41,7 @@ static bool cmd_systemd_watch_init(struct cmd_data_base *_data) {
 
 	r = data->use_user_bus ? sd_bus_open_user(&data->bus) : sd_bus_open_system(&data->bus);
 	if (r < 0) {
-		fprintf(stderr, "is3-status: systemd_watch: Failed to connect to %s bus: %s\n",
+		fprintf(stderr, "systemd_watch: Failed to connect to %s bus: %s\n",
 				data->use_user_bus ? "user" : "system", strerror(-r));
 		return false;
 	}
@@ -53,9 +53,9 @@ static bool cmd_systemd_watch_init(struct cmd_data_base *_data) {
 						   "org.freedesktop.systemd1.Manager", "LoadUnit",
 						   &error, &m, "s", data->service_name);
 	if (r < 0)
-		fprintf(stderr, "is3-status: systemd_watch: Failed to issue method call: %s\n", error.message);
+		fprintf(stderr, "systemd_watch: Failed to issue method call: %s\n", error.message);
 	else if ((r = sd_bus_message_read(m, "o", &data->unit_path)) < 0)
-		fprintf(stderr, "is3-status: systemd_watch: Failed to parse response message: %s\n", strerror(-r));
+		fprintf(stderr, "systemd_watch: Failed to parse response message: %s\n", strerror(-r));
 	else // successful
 		data->unit_path = strdup(data->unit_path);
 
@@ -84,7 +84,7 @@ static bool cmd_systemd_watch_recache(struct cmd_data_base *_data) {
 											"org.freedesktop.systemd1", data->unit_path,
 											"org.freedesktop.systemd1.Unit", "ActiveState",
 											&error, &data->base.cached_fulltext))) {
-		fprintf(stderr, "is3-status: systemd_watch: Failed to get property \'ActiveState\': %s\n", error.message);
+		fprintf(stderr, "systemd_watch: Failed to get property \'ActiveState\': %s\n", error.message);
 	}
 	sd_bus_error_free(&error);
 

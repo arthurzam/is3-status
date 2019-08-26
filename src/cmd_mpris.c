@@ -70,7 +70,7 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	sd_bus_error error = SD_BUS_ERROR_NULL;
 	int r = sd_bus_open_user(&data->bus);
 	if (r < 0) {
-		fprintf(stderr, "is3-status: mpris: Failed to connect to user bus: %s\n", strerror(-r));
+		fprintf(stderr, "mpris: Failed to connect to user bus: %s\n", strerror(-r));
 		return false;
 	}
 
@@ -185,7 +185,7 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 	int r = sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 							   "org.mpris.MediaPlayer2.Player", op, &error, NULL, NULL);
 	if (r < 0)
-		fprintf(stderr, "is3-status: mpris: failed click event %s with: %s\n", op, error.message);
+		fprintf(stderr, "mpris: failed click event %s with: %s\n", op, error.message);
 	sd_bus_error_free(&error);
 	return r >= 0;
 }

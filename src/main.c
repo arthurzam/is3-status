@@ -101,7 +101,7 @@ static bool handle_click_event(void *arg) {
 			int button = -1;
 
 			for (size_t i = 0; i < node->u.object.len; ++i ) {
-				const char * key = node->u.object.keys[i];
+				const char *key = node->u.object.keys[i];
 				if (0 == memcmp(key, "name", 5))
 					name = YAJL_GET_STRING(node->u.object.values[i]);
 				else if (0 == memcmp(key, "instance", 9))
@@ -111,7 +111,7 @@ static bool handle_click_event(void *arg) {
 			}
 
 			if (name == NULL || button == -1) {
-				fprintf(stderr, "is3-status: bad click event object: %s\n", input);
+				fprintf(stderr, "handle_cevent: bad click event object: %s\n", input);
 				continue;
 			}
 			FOREACH_RUN(run, runs) {
@@ -122,8 +122,7 @@ static bool handle_click_event(void *arg) {
 					break;
 				}
 			}
-		} else
-			fprintf(stderr, "is3-status: unable to parse click event:\n>>> %s\n", input);
+		}
 		yajl_tree_free(node);
 	}
 	return res;
@@ -137,20 +136,20 @@ int main(int argc, char *argv[])
 #endif
 	FILE *ini = open_config(argc > 1 ? argv[1] : NULL);
 	if (ini == NULL) {
-		fprintf(stderr, "is3-status: Couldn't find config file\n");
+		fprintf(stderr, "Couldn't find config file\n");
 		return 1;
 	}
 	struct runs_list runs = ini_parse(ini);
 	fclose(ini);
 	if (runs.runs_begin == NULL || runs.runs_end == runs.runs_begin) {
-		fprintf(stderr, "is3-status: Couldn't load config file\n");
+		fprintf(stderr, "Couldn't load config file\n");
 		return 1;
 	}
 
 	setup_global_settings();
 	FOREACH_RUN(run, &runs) {
 		if (!run->vtable->func_init(run->data)) {
-			fprintf(stderr, "is3-status: init for %s:%s failed\n", run->vtable->name, run->instance);
+			fprintf(stderr, "init for %s:%s failed\n", run->vtable->name, run->instance);
 			return 1;
 		}
 		if (!run->data->align)
@@ -161,7 +160,7 @@ int main(int argc, char *argv[])
 
 #define WRITE_LEN(str) write(STDOUT_FILENO, str, strlen(str))
 	if (0 > WRITE_LEN("{\"version\":1, \"click_events\": true}\n[\n")) {
-		fprintf(stderr, "is3-status: unable to send start status bar\n");
+		fprintf(stderr, "unable to send start status bar\n");
 		return 1;
 	}
 #undef WRITE_LEN
@@ -200,7 +199,7 @@ int main(int argc, char *argv[])
 
 		yajl_gen_get_buf(json_gen, (const unsigned char **)(void *)&iov[0].iov_base, &iov[0].iov_len);
 		if (0 > writev(STDOUT_FILENO, iov, 2)) {
-			fprintf(stderr, "is3-status: unable to send output, error %s\n", strerror(errno));
+			fprintf(stderr, "main: unable to send output, error %s\n", strerror(errno));
 		}
 		yajl_gen_clear(json_gen);
 	}

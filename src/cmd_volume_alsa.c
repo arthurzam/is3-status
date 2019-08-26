@@ -51,25 +51,25 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	int err;
 
 	if ((err = snd_mixer_open(&data->mixer, 0)) < 0) {
-		fprintf(stderr, "is3-status: ALSA: Cannot open mixer: %s\n", snd_strerror(err));
+		fprintf(stderr, "ALSA: Cannot open mixer: %s\n", snd_strerror(err));
 		return false;
 	}
 
 	err = snd_mixer_attach(data->mixer, (data->device ? data->device : "default"));
 	free(data->device);
 	if (err < 0) {
-		fprintf(stderr, "is3-status: ALSA: Cannot attach mixer to device: %s\n", snd_strerror(err));
+		fprintf(stderr, "ALSA: Cannot attach mixer to device: %s\n", snd_strerror(err));
 		goto _error_mixer;
 	}
 
 	/* Register this mixer */
 	if ((err = snd_mixer_selem_register(data->mixer, NULL, NULL)) < 0) {
-		fprintf(stderr, "is3-status: ALSA: snd_mixer_selem_register: %s\n", snd_strerror(err));
+		fprintf(stderr, "ALSA: snd_mixer_selem_register: %s\n", snd_strerror(err));
 		goto _error_mixer;
 	}
 
 	if ((err = snd_mixer_load(data->mixer)) < 0) {
-		fprintf(stderr, "is3-status: ALSA: snd_mixer_load: %s\n", snd_strerror(err));
+		fprintf(stderr, "ALSA: snd_mixer_load: %s\n", snd_strerror(err));
 		goto _error_mixer;
 	}
 
@@ -82,8 +82,7 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	snd_mixer_selem_id_set_name(data->sid, (data->mixer_name ? data->mixer_name : "Master"));
 	free(data->mixer_name);
 	if (!(data->elem = snd_mixer_find_selem(data->mixer, data->sid))) {
-		fprintf(stderr, "is3-status: ALSA: Cannot find mixer %s (index %i)\n",
-				snd_mixer_selem_id_get_name(data->sid), snd_mixer_selem_id_get_index(data->sid));
+		fprintf(stderr, "ALSA: Cannot find mixer\n");
 		snd_mixer_selem_id_free(data->sid);
 		data->sid = NULL;
 		goto _error_mixer;
@@ -129,7 +128,7 @@ static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	if (data->supportes_mute) {
 		int pbval;
 		if ((res = snd_mixer_selem_get_playback_switch(data->elem, 0, &pbval)) < 0)
-			fprintf(stderr, "is3-status: ALSA: get_playback_switch: %s\n", snd_strerror(res));
+			fprintf(stderr, "ALSA: get_playback_switch: %s\n", snd_strerror(res));
 		if (!pbval) {
 			CMD_COLOR_SET(data, g_general_settings.color_degraded);
 			if (data->format_muted)
@@ -155,9 +154,9 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 			if (data->supportes_mute) {
 				int pbval;
 				if ((res = snd_mixer_selem_get_playback_switch(data->elem, 0, &pbval)) < 0)
-					fprintf(stderr, "is3-status: ALSA: get_playback_switch: %s\n", snd_strerror(res));
+					fprintf(stderr, "ALSA: get_playback_switch: %s\n", snd_strerror(res));
 				else if ((res = snd_mixer_selem_set_playback_switch(data->elem, 0, !pbval)) < 0)
-					fprintf(stderr, "is3-status: ALSA: set_playback_switch: %s\n", snd_strerror(res));
+					fprintf(stderr, "ALSA: set_playback_switch: %s\n", snd_strerror(res));
 				else
 					return true;
 			}

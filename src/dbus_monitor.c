@@ -108,7 +108,7 @@ static bool dbus_monitor_handler(void *data) {
 static bool dbus_monitor_setup() {
 	int r = sd_bus_open_user(&g_dbus_monitor_bus);
 	if (r < 0) {
-		fprintf(stderr, "is3-status: dbus: Failed to connect to user bus: %s\n", strerror(-r));
+		fprintf(stderr, "dbus: Failed to connect to user bus: %s\n", strerror(-r));
 		return false;
 	}
 	fdpoll_add(sd_bus_get_fd(g_dbus_monitor_bus), dbus_monitor_handler, NULL);

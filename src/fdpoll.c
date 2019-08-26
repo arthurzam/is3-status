@@ -63,7 +63,7 @@ int fdpoll_run(void) {
 #endif
 	int res = 0;
 	if (ret < 0) {
-		fprintf(stderr, "poll failed with %s\n", strerror(errno));
+		fprintf(stderr, "fdpoll: failed with %s\n", strerror(errno));
 		return -1;
 	} else if (ret > 0) {
 		for (unsigned i = 0; i < g_fdpoll.size; i++) {
@@ -71,7 +71,7 @@ int fdpoll_run(void) {
 				if (g_fdpoll.data[i].func_handle(g_fdpoll.data[i].data))
 					res = 1;
 			} else if(fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-				fprintf(stderr, "is3-status: fd %d closed\n", fds[i].fd);
+				fprintf(stderr, "fdpoll: fd %d closed\n", fds[i].fd);
 				fds[i].fd = -1;
 			}
 		}
