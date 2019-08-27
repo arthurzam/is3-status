@@ -51,7 +51,7 @@ static FILE *open_config(const char *defPath) {
 		if (access(buf, R_OK) == 0)
 			return fopen(buf, "r");
 	}
-	if ((path = getenv("HOME"))){
+	if ((path = getenv("HOME"))) {
 		strncpy(buf, path, FILENAME_MAX);
 		const size_t len = strlen(buf);
 
@@ -96,11 +96,11 @@ static bool handle_click_event(void *arg) {
 			walker++;
 
 		yajl_val node = yajl_tree_parse(walker, errbuf, sizeof(errbuf));
-		if(YAJL_IS_OBJECT(node)) {
+		if (YAJL_IS_OBJECT(node)) {
 			const char *name = NULL, *instance = NULL;
 			int button = -1;
 
-			for (size_t i = 0; i < node->u.object.len; ++i ) {
+			for (size_t i = 0; i < node->u.object.len; ++i) {
 				const char *key = node->u.object.keys[i];
 				if (0 == memcmp(key, "name", 5))
 					name = YAJL_GET_STRING(node->u.object.values[i]);
@@ -131,11 +131,11 @@ static bool handle_click_event(void *arg) {
 int main(int argc, char *argv[])
 {
 #ifdef TESTS
-	if(!test_cmd_array_correct())
+	if (!test_cmd_array_correct())
 		return 1;
 #endif
 	FILE *ini = open_config(argc > 1 ? argv[1] : NULL);
-	if (ini == NULL) {
+	if (!ini) {
 		fprintf(stderr, "Couldn't find config file\n");
 		return 1;
 	}
@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "init for %s:%s failed\n", run->vtable->name, run->instance);
 			return 1;
 		}
+		run->vtable->func_recache(run->data);
 		if (!run->data->align)
 			run->data->align = g_general_settings.align;
 		if (run->data->interval >= 0 && run->data->interval < g_general_settings.interval)

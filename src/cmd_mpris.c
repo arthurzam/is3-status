@@ -120,7 +120,7 @@ static bool cmd_mpris_recache(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 
 	const char *output_format = data->format_stopped;
-	if (data->data.playback_status == NULL);
+	if (!data->data.playback_status);
 	else if (0 == memcmp(data->data.playback_status, "Playing", 8)) {
 		output_format = data->format_playing;
 		CMD_COLOR_SET(data, g_general_settings.color_good);

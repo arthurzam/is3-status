@@ -34,12 +34,11 @@ struct cmd_systemd_watch_data {
 
 static bool cmd_systemd_watch_init(struct cmd_data_base *_data) {
 	struct cmd_systemd_watch_data *data = (struct cmd_systemd_watch_data *)_data;
-	int r;
 
-	if (data->service_name == NULL)
+	if (!data->service_name)
 		return false;
 
-	r = data->use_user_bus ? sd_bus_open_user(&data->bus) : sd_bus_open_system(&data->bus);
+	int r = data->use_user_bus ? sd_bus_open_user(&data->bus) : sd_bus_open_system(&data->bus);
 	if (r < 0) {
 		fprintf(stderr, "systemd_watch: Failed to connect to %s bus: %s\n",
 				data->use_user_bus ? "user" : "system", strerror(-r));

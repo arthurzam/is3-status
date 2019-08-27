@@ -177,7 +177,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 static bool cmd_sway_language_init(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 
-	if (data->keyboard_name == NULL)
+	if (!data->keyboard_name)
 		return false;
 	if (-1 == (data->socketfd = cmd_sway_language_open_socket()))
 		return false;

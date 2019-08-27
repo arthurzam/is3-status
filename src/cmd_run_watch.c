@@ -27,7 +27,6 @@
 
 struct cmd_run_watch_data {
 	struct cmd_data_base base;
-	pid_t pid;
 	char *path;
 };
 
@@ -48,11 +47,11 @@ static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 	if (!pid_file)
 		return false;
 	char buffer[128];
-	if (fgets(buffer, sizeof(buffer), pid_file) != NULL)
-		data->pid = (pid_t)strtol(buffer, NULL, 10);
+	if (fgets(buffer, sizeof(buffer), pid_file)) {
+		pid_t pid = (pid_t)strtol(buffer, NULL, 10);
+		data->base.cached_fulltext = (kill(pid, 0) == 0 || errno == EPERM) ? "Running" : "Not Running";
+	}
 	fclose(pid_file);
-
-	data->base.cached_fulltext = (kill(data->pid, 0) == 0 || errno == EPERM) ? "Running" : "Not Running";
 
 	return true;
 }

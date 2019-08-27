@@ -188,7 +188,7 @@ _error:
 }
 
 void free_all_run_instances(struct runs_list *runs) {
-	for(struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
+	for (struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
 		run->vtable->func_destroy(run->data);
 		free(run->data);
 		free(run->instance);
@@ -213,7 +213,7 @@ int test_cmd_array_correct(void) {
 		if (!iter->func_init || !iter->func_destroy || !iter->func_recache)
 			return TEST_ERR(ERR_STR("cmd %s: must have function is empty"), iter->name);
 
-		for(unsigned i = 1; i < iter->opts.size; ++i)
+		for (unsigned i = 1; i < iter->opts.size; ++i)
 			if (0 <= strcmp(iter->opts.names[i - 1], iter->opts.names[i]))
 				return TEST_ERR(ERR_STR("cmd %s: options not sorted"), iter->name);
 
@@ -228,9 +228,9 @@ int test_cmd_array_correct(void) {
 		for (size_t i = 0; i < sizeof(base_opts) / sizeof(base_opts[0]); ++i) {
 			const struct cmd_option *cmd_option = find_cmd_option(&iter->opts, base_opts[i].name);
 			if (!cmd_option);
-			else if(cmd_option->type != base_opts[i].type)
+			else if (cmd_option->type != base_opts[i].type)
 				return TEST_ERR(ERR_STR("cmd %s: incorrect type for %s"), iter->name, base_opts[i].name);
-			else if(cmd_option->offset != base_opts[i].offset)
+			else if (cmd_option->offset != base_opts[i].offset)
 				return TEST_ERR(ERR_STR("cmd %s: incorrect offset for %s"), iter->name, base_opts[i].name);
 		}
 	}

@@ -45,7 +45,7 @@ static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	data->dpy = XOpenDisplay(display);
 	free(data->display);
 	data->display = NULL;
-	if (data->dpy == NULL)
+	if (!data->dpy)
 		return false;
 
 	if (!data->lan1_def)

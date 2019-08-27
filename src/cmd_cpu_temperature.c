@@ -28,14 +28,13 @@ struct cmd_cpu_temperature_data {
 	char *format;
 	char *path;
 	long high_threshold;
-	int curr_value;
 	char cached_output[128];
 };
 
 static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
-	if (data->format == NULL)
+	if (!data->format)
 		return false;
 
 	if (data->path) {
@@ -44,7 +43,6 @@ static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 		memcpy(data->path + len, "/temp", 6);
 	} else
 		data->path = strdup("/sys/class/thermal/thermal_zone0/temp");
-	data->curr_value = -1;
 
 	data->base.cached_fulltext = data->cached_output;
 	return access(data->path, R_OK) == 0;
@@ -62,29 +60,28 @@ VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x000
 static bool cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
-	if (data->curr_value == -1) {
-		char buf[64];
-		FILE *f;
-		if ((f = fopen(data->path, "r")) && fgets(buf, sizeof(buf), f))
-			data->curr_value = atoi(buf) / 1000;
-		else
-			data->curr_value = -1;
-		fclose(f);
-	}
+	int curr_value;
+	char buf[64];
+	FILE *f;
+	if ((f = fopen(data->path, "r")) && fgets(buf, sizeof(buf), f))
+		curr_value = atoi(buf) / 1000;
+	else
+		curr_value = -1;
+	fclose(f);
 
 	int res;
 	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) >= 0) {
-		if (data->curr_value == -1)
+		if (curr_value == -1)
 			vprint_strcat(&ctx, "???");
 		else {
-			int output = data->curr_value;
+			int output = curr_value;
 			if (res == 'f')
 				output = output * 9 / 5 + 32;
 			vprint_itoa(&ctx, output);
 		}
 	}
-	if (data->high_threshold > 0 && data->high_threshold < data->curr_value)
+	if (data->high_threshold > 0 && data->high_threshold < curr_value)
 		CMD_COLOR_SET(data, g_general_settings.color_bad);
 	else
 		CMD_COLOR_CLEAN(data);

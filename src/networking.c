@@ -33,7 +33,7 @@
 #include <linux/rtnetlink.h>
 
 #define FOREACH_RTA(begin,len) \
-	for(struct rtattr *rta = (struct rtattr *)(begin); \
+	for (struct rtattr *rta = (struct rtattr *)(begin); \
 		RTA_OK(rta, (len)); rta = RTA_NEXT(rta, (len)))
 
 struct net_global_t g_net_global = {
@@ -111,8 +111,8 @@ unsigned net_add_if(const char *if_name) {
 }
 
 static struct net_if_addrs *net_find_if(const char *if_name) {
-	for(unsigned i = 0; i < g_net_global.ifs_size; i++)
-		if(0 == strcmp(g_net_global.ifs_arr[i].if_name, if_name))
+	for (unsigned i = 0; i < g_net_global.ifs_size; i++)
+		if (0 == strcmp(g_net_global.ifs_arr[i].if_name, if_name))
 			return g_net_global.ifs_arr + i;
 	return NULL;
 }
@@ -146,7 +146,7 @@ bool handle_netlink_read(void *arg) {
 							break;
 						}
 					}
-					if(if_name && (curr_if = net_find_if(if_name))) {
+					if (if_name && (curr_if = net_find_if(if_name))) {
 						if (isDel)
 							curr_if->is_down = true;
 						else
@@ -173,7 +173,7 @@ bool handle_netlink_read(void *arg) {
 								break;
 						}
 					}
-					if(if_name && (curr_if = net_find_if(if_name))) {
+					if (if_name && (curr_if = net_find_if(if_name))) {
 						if (isDel) {
 							if (ifa->ifa_family == AF_INET6)
 								curr_if->if_ip6[0] = '\0';

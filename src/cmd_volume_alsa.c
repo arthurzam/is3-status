@@ -45,7 +45,7 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 
 	if (data->wheel_step <= 0)
 		data->wheel_step = 2;
-	if (data->format == NULL)
+	if (!data->format)
 		return false;
 
 	int err;
@@ -74,7 +74,7 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	}
 
 	snd_mixer_selem_id_malloc(&data->sid);
-	if (data->sid == NULL) {
+	if (!data->sid) {
 		goto _error_mixer;
 	}
 	/* Find the given mixer */

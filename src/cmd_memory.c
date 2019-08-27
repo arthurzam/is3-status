@@ -37,7 +37,7 @@ struct cmd_memory_data {
 static bool cmd_memory_init(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 
-	if (data->format == NULL)
+	if (!data->format)
 		return false;
 
 	data->use_decimal = !!data->use_decimal;

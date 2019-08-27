@@ -59,11 +59,11 @@ enum {
 static bool cmd_battery_init(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
-	if (data->path == NULL)
+	if (!data->path)
 		return false;
-	if (data->format_missing == NULL || data->format_charging == NULL || data->format_discharging == NULL)
+	if (!data->format_missing || !data->format_charging || !data->format_discharging)
 		return false;
-	if (data->format_full == NULL)
+	if (!data->format_full)
 		data->format_full = strdup(data->format_charging);
 
 	data->last_full_capacity = !!data->last_full_capacity;

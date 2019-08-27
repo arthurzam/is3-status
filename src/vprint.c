@@ -28,7 +28,7 @@ static void vprint_ch(struct vprint *ctx, char ch) {
 
 int vprint_walk(struct vprint *ctx) {
 	const char *next = strchr(ctx->curr_pos, '%');
-	if (next == NULL) {
+	if (!next) {
 		vprint_strcat(ctx, ctx->curr_pos);
 		return -1;
 	}
@@ -118,7 +118,7 @@ void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, u
 	} else {
 		value *= val_bsize;
 		const struct disk_prefix_t *temp = &g_disk_prefix_base;
-		for(unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
+		for (unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
 			if (g_disk_suffixs[use_decimal][i].base < value) {
 				temp = g_disk_suffixs[use_decimal] + i;
 				break;
@@ -139,8 +139,8 @@ long parse_human_bytes(const char *str) {
 	} else if (*last >= '0' && *last <= '9') {
 		base = 1;
 	} else {
-		for(unsigned v = 0; v < 2; ++v) {
-			for(unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
+		for (unsigned v = 0; v < 2; ++v) {
+			for (unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
 				if (0 == memcmp(g_disk_suffixs[v][i].suffix, last - (1 + v), 2 + v)) {
 					base = (long)g_disk_suffixs[v][i].base;
 					goto _out;
