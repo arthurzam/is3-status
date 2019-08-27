@@ -94,6 +94,7 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	sd_bus_message_unref(reply);
 
 	data->base.cached_fulltext = data->cached_output;
+	data->base.interval = -1;
 	return true;
 }
 

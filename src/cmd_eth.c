@@ -42,6 +42,7 @@ static bool cmd_eth_init(struct cmd_data_base *_data) {
 		data->format_up = strdup("%a");
 
 	data->base.cached_fulltext = data->cached_output;
+	data->base.interval = -1;
 
 	data->if_pos = net_add_if(data->interface);
 	// data->interface is used in inner networking array

@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 		}
 		if (!run->data->align)
 			run->data->align = g_general_settings.align;
-		if (run->data->interval < g_general_settings.interval)
+		if (run->data->interval >= 0 && run->data->interval < g_general_settings.interval)
 			run->data->interval = g_general_settings.interval;
 	}
 
@@ -176,24 +176,23 @@ int main(int argc, char *argv[])
 	for (unsigned eventNum = 0; (fdpoll_res = fdpoll_run()) >= 0; ++eventNum) {
 		yajl_gen_array_open(json_gen);
 		FOREACH_RUN(run, &runs) {
-			yajl_gen_map_open(json_gen);
+			if ((fdpoll_res > 0) || (run->data->interval >= 0 && eventNum % run->data->interval == 0))
+				run->vtable->func_recache(run->data);
 
 #define JSON_OUTPUT(key,value) json_output(json_gen, (key), strlen(key), value, strlen(value))
-
+			yajl_gen_map_open(json_gen);
 			JSON_OUTPUT("name", run->vtable->name);
 			JSON_OUTPUT("markup", "none");
 			if (run->data->align)
 				JSON_OUTPUT("align", run->data->align);
 			if (run->instance)
 				JSON_OUTPUT("instance", run->instance);
-			if ((fdpoll_res > 0) || (eventNum % run->data->interval == 0))
-				run->vtable->func_recache(run->data);
 			if (run->data->cached_fulltext)
 				JSON_OUTPUT("full_text", run->data->cached_fulltext);
 			if (run->data->cached_color[0])
 				json_output(json_gen, "color", 5, run->data->cached_color, 7);
-
 			yajl_gen_map_close(json_gen);
+#undef JSON_OUTPUT
 		}
 		yajl_gen_array_close(json_gen);
 
