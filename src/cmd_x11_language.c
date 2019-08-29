@@ -16,11 +16,15 @@
 */
 
 #include "main.h"
+#include "fdpoll.h"
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/XKBlib.h>
 
 struct cmd_x11_language_data {
 	struct cmd_data_base base;
@@ -31,9 +35,25 @@ struct cmd_x11_language_data {
 	char *lan2_upper;
 
 	Display *dpy;
+	int xkbEventType;
 
 	char *display;
 };
+
+static bool cmd_x11_language_recache(struct cmd_data_base *_data);
+
+bool handle_x11_lan_events(void *arg) {
+	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)arg;
+	XEvent e;
+
+	XNextEvent(data->dpy, &e);
+	if (e.type == data->xkbEventType) {
+		XkbEvent *xkbEvent = (XkbEvent *)&e;
+		if (xkbEvent->any.xkb_type == XkbStateNotify || xkbEvent->any.xkb_type == XkbIndicatorStateNotify)
+			cmd_x11_language_recache(arg);
+	}
+	return false;
+}
 
 static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
@@ -60,6 +80,15 @@ static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	for (char *ptr = data->lan2_upper; *ptr; ++ptr)
 		*ptr &= ~0x20; // make upper case
 
+	XKeysymToKeycode(data->dpy, XK_F1);
+	XkbQueryExtension(data->dpy, 0, &data->xkbEventType, 0, 0, 0);
+	XkbSelectEvents(data->dpy, XkbUseCoreKbd, XkbAllEventsMask, XkbStateNotifyMask | XkbIndicatorStateNotifyMask);
+	XkbSelectEventDetails(data->dpy, XkbUseCoreKbd, XkbStateNotify, XkbAllStateComponentsMask, XkbGroupStateMask);
+	XSync(data->dpy, false);
+
+	fdpoll_add(ConnectionNumber(data->dpy), handle_x11_lan_events, data);
+
+	data->base.interval = -1;
 	return true;
 }
 
