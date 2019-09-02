@@ -55,7 +55,7 @@ _Static_assert(sizeof(struct cmd_option) == 2, "incorrect bit width in struct cm
 	static const struct cmd_option name ## _options[] __attribute__ ((aligned (2))) = { GEN(CMD_IMPL_OPTS_GEN_DATA) };
 #define CMD_OPTS_GEN_DATA(name) { \
 		.names = name ## _options_names, .opts = name ## _options, \
-		.size = sizeof(name ## _options) / sizeof(name ## _options[0]) \
+		.size = ARRAY_SIZE(name ## _options) \
 	}
 
 struct cmd_opts {
@@ -106,6 +106,7 @@ struct cmd {
 #define CMD_COLOR_CLEAN(data) (data)->base.cached_color[0] = '\0'
 
 #define X_STRLEN(str) ((sizeof(str)/sizeof(str[0]))-sizeof(str[0]))
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 _Static_assert(sizeof(char) == 1, "If it isn't of size 1 byte, a lot of code is incorrect!");
 

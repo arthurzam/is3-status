@@ -225,7 +225,7 @@ int test_cmd_array_correct(void) {
 			{"align", OPT_TYPE_ALIGN, offsetof(struct cmd_data_base, align)},
 			{"interval", OPT_TYPE_LONG, offsetof(struct cmd_data_base, interval)},
 		};
-		for (size_t i = 0; i < sizeof(base_opts) / sizeof(base_opts[0]); ++i) {
+		for (size_t i = 0; i < ARRAY_SIZE(base_opts); ++i) {
 			const struct cmd_option *cmd_option = find_cmd_option(&iter->opts, base_opts[i].name);
 			if (!cmd_option);
 			else if (cmd_option->type != base_opts[i].type)

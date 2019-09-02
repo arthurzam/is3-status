@@ -46,7 +46,7 @@ struct dbus_fields_t {
 	static const char *const name ## _fields_names[] = { GEN(CMD_IMPL_OPTS_GEN_NAME) }; \
 	static const struct dbus_field name ## _fields[] __attribute__ ((aligned (2))) = { GEN(CMD_IMPL_OPTS_GEN_DATA) }; \
 	static const struct dbus_fields_t name = { .names = name ## _fields_names, .opts = name ## _fields, \
-		.size = sizeof(name ## _fields) / sizeof(name ## _fields[0]) };
+		.size = ARRAY_SIZE(name ## _fields) };
 
 struct dbus_monitor_base {
 	const struct dbus_fields_t *fields;

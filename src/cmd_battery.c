@@ -142,7 +142,7 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 				break;
 			} else
 				pos = (2 * pos) + (1 + !!(cmp_res < 0));
-		} while (pos < sizeof(g_bat_opts) / sizeof(g_bat_opts[0]));
+		} while (pos < ARRAY_SIZE(g_bat_opts));
 	}
 }
 

@@ -91,16 +91,16 @@ static bool cmd_memory_file(struct memory_info_t *info) {
 			if (cmp_res == 0) {
 				int64_t *const dst = ((int64_t *)info) + g_mem_opts[pos].offset;
 				*dst = atoll(line + g_mem_opts[pos].str_len) * 1024;
-				if (++found == sizeof(g_mem_opts) / sizeof(g_mem_opts[0]))
+				if (++found == ARRAY_SIZE(g_mem_opts))
 					goto _exit; // found all
 				break;
 			} else
 				pos = (2 * pos) + (1 + !!(cmp_res < 0));
-		} while (pos < sizeof(g_mem_opts) / sizeof(g_mem_opts[0]));
+		} while (pos < ARRAY_SIZE(g_mem_opts));
 	}
 _exit:
 	fclose(memFile);
-	return (found == sizeof(g_mem_opts) / sizeof(g_mem_opts[0]));
+	return (found == ARRAY_SIZE(g_mem_opts));
 }
 
 // generaterd using command ./scripts/gen-format.py AaFfSstUu
