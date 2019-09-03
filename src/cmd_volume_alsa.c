@@ -16,7 +16,10 @@
 */
 
 #include "main.h"
+#include "fdpoll.h"
 #include "vprint.h"
+
+#include <alloca.h>
 
 #include <alsa/asoundlib.h>
 
@@ -39,6 +42,20 @@ struct cmd_volume_alsa_data {
 
 	char cached_output[256];
 };
+
+static bool cmd_volume_alsa_recache(struct cmd_data_base *_data);
+
+static int handle_mixer_event(snd_mixer_elem_t *elem, unsigned int mask) {
+	if (mask & SND_CTL_EVENT_MASK_VALUE)
+		cmd_volume_alsa_recache((struct cmd_data_base *)snd_mixer_elem_get_callback_private(elem));
+	return 0;
+}
+
+static bool handle_alsa_read(void *arg) {
+	snd_mixer_t *handle = (snd_mixer_t *)arg;
+	snd_mixer_handle_events(handle);
+	return false;
+}
 
 static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
@@ -73,6 +90,7 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 		goto _error_mixer;
 	}
 
+
 	snd_mixer_selem_id_malloc(&data->sid);
 	if (!data->sid) {
 		goto _error_mixer;
@@ -94,7 +112,20 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 	data->volume_min = min;
 	data->volume_range = max - min;
 
+	/* add callback for mixer */
+	{
+		snd_mixer_elem_set_callback(data->elem, handle_mixer_event);
+		snd_mixer_elem_set_callback_private(data->elem, data);
+
+		unsigned count = (unsigned)snd_mixer_poll_descriptors_count(data->mixer);
+		struct pollfd *polls = alloca(sizeof(struct pollfd) * count);
+		count = (unsigned)snd_mixer_poll_descriptors(data->mixer, polls, count);
+		for (unsigned i = 0; i < count; ++i)
+			fdpoll_add(polls[i].fd, handle_alsa_read, data->mixer);
+	}
+
 	data->base.cached_fulltext = data->cached_output;
+	data->base.interval = -1;
 	return true;
 _error_mixer:
 	snd_mixer_close(data->mixer);
@@ -146,9 +177,7 @@ static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 
 static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
-
 	int res;
-
 	switch(event) {
 		case CEVENT_MOUSE_MIDDLE:
 			if (data->supportes_mute) {
@@ -158,7 +187,7 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 				else if ((res = snd_mixer_selem_set_playback_switch(data->elem, 0, !pbval)) < 0)
 					fprintf(stderr, "ALSA: set_playback_switch: %s\n", snd_strerror(res));
 				else
-					return true;
+					cmd_volume_alsa_recache(_data);
 			}
 			break;
 		case CEVENT_MOUSE_WHEEL_UP:
@@ -179,7 +208,7 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 					val = data->volume_min;
 			}
 			snd_mixer_selem_set_playback_volume(data->elem, 0, val);
-			return true;
+			cmd_volume_alsa_recache(_data);
 		}
 	}
 	return false;
