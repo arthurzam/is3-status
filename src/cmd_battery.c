@@ -81,7 +81,7 @@ static void cmd_battery_destroy(struct cmd_data_base *_data) {
 	free(data->path);
 }
 
-static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
+static bool cmd_battery_parse_file(const char *path, struct battery_info_t *info) {
 	enum {
 		BAT_OPT_STATUS = 0,
 		BAT_OPT_INT = 1,
@@ -109,6 +109,9 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 	};
 #undef BAT_OPT
 
+	FILE *batFile = fopen(path, "r");
+	if (!batFile)
+		return false;
 	char line[256];
 	while (fgets(line, sizeof(line), batFile)) {
 		char *ptr = line;
@@ -144,6 +147,8 @@ static void cmd_battery_parse_file(FILE *batFile, struct battery_info_t *info) {
 				pos = (2 * pos) + (1 + !!(cmp_res < 0));
 		} while (pos < ARRAY_SIZE(g_bat_opts));
 	}
+	fclose(batFile);
+	return true;
 }
 
 // generaterd using command ./scripts/gen-format.py bBt
@@ -157,11 +162,7 @@ static bool cmd_battery_recache(struct cmd_data_base *_data) {
 
 	/* read file */
 	{
-		FILE *batFile = fopen(data->path, "r");
-		if (batFile) {
-			cmd_battery_parse_file(batFile, &info);
-			fclose(batFile);
-
+		if (cmd_battery_parse_file(data->path, &info)) {
 			full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
 			if (info.remainingAh != -1 && info.remainingW == -1) {
 				if (info.present_rate > 0 && info.voltage != -1) {
