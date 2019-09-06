@@ -110,4 +110,7 @@ struct cmd {
 
 _Static_assert(sizeof(char) == 1, "If it isn't of size 1 byte, a lot of code is incorrect!");
 
+#define unlikely(expr) __builtin_expect(!!(expr), 0)
+#define likely(expr) __builtin_expect(!!(expr), 1)
+
 #endif // GENERAL_H

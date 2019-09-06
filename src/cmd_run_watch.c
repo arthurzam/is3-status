@@ -17,13 +17,14 @@
 
 #include "main.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <errno.h>
-#include <signal.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
+#include <errno.h>
+#include <fcntl.h>
 
 struct cmd_run_watch_data {
 	struct cmd_data_base base;
@@ -43,16 +44,19 @@ static void cmd_run_watch_destroy(struct cmd_data_base *_data) {
 static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 
-	FILE *pid_file = fopen(data->path, "r");
-	if (!pid_file)
-		return false;
-	char buffer[128];
-	if (fgets(buffer, sizeof(buffer), pid_file)) {
-		pid_t pid = (pid_t)strtol(buffer, NULL, 10);
-		data->base.cached_fulltext = (kill(pid, 0) == 0 || errno == EPERM) ? "Running" : "Not Running";
+	data->base.cached_fulltext = "Not Running";
+	int fd = open(data->path, O_RDONLY);
+	if (likely(fd >= 0)) {
+		char buf[64];
+		ssize_t len = read(fd, buf, sizeof(buf) - 1);
+		if (likely(len > 0)) {
+			buf[len] = '\0';
+			pid_t pid = (pid_t)atoi(buf);
+			if (kill(pid, 0) == 0 || errno == EPERM)
+				data->base.cached_fulltext = "Running";
+		}
+		close(fd);
 	}
-	fclose(pid_file);
-
 	return true;
 }
 

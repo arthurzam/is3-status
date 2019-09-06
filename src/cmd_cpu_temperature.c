@@ -19,9 +19,10 @@
 #include "vprint.h"
 
 #include <string.h>
-#include <stdio.h>
 
+#include <sys/types.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 struct cmd_cpu_temperature_data {
 	struct cmd_data_base base;
@@ -60,14 +61,19 @@ VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x000
 static bool cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
-	int curr_value;
-	char buf[64];
-	FILE *f;
-	if ((f = fopen(data->path, "r")) && fgets(buf, sizeof(buf), f))
-		curr_value = atoi(buf) / 1000;
-	else
-		curr_value = -1;
-	fclose(f);
+	int curr_value = -1;
+	{
+		int fd = open(data->path, O_RDONLY);
+		if (likely(fd >= 0)) {
+			char buf[64];
+			ssize_t len = read(fd, buf, sizeof(buf) - 1);
+			if (likely(len > 0)) {
+				buf[len] = '\0';
+				curr_value = atoi(buf) / 1000;
+			}
+		}
+		close(fd);
+	}
 
 	int res;
 	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};

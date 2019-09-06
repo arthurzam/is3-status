@@ -18,8 +18,11 @@
 #include "main.h"
 #include "vprint.h"
 
-#include <stdio.h>
 #include <string.h>
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 struct cmd_load_data {
 	struct cmd_data_base base;
@@ -44,15 +47,27 @@ VPRINT_OPTS(cmd_load_var_options, {0x00000000, 0x000E0000, 0x00000000, 0x0000000
 static bool cmd_load_recache(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 
-	double loadavg[3];
-	if (getloadavg(loadavg, 3) != -1) {
-		int res;
-		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
-			vprint_dtoa(&ctx, loadavg[res - '1']);
+	int fd = open("/proc/loadavg", O_RDONLY);
+	if (likely(fd >= 0)) {
+		char buf[65];
+		ssize_t len = read(fd, buf, sizeof(buf) - 1);
+		if (likely(len > 0)) {
+			buf[len] = '\0';
+			const char *loadavgs[3] = {NULL, NULL, NULL};
+			char *tmp = buf;
+			for (unsigned i = 0; i < 3; i++) {
+				loadavgs[i] = tmp;
+				tmp = strchr(tmp, ' ');
+				*(tmp++) = '\0';
+			}
+			int res;
+			struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+			while ((res = vprint_walk(&ctx)) >= 0) {
+				vprint_strcat(&ctx, loadavgs[res - '1']);
+			}
 		}
+		close(fd);
 	}
-
 	return true;
 }
 
