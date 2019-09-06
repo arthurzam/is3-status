@@ -29,22 +29,32 @@
 struct cmd_run_watch_data {
 	struct cmd_data_base base;
 	char *path;
+	char *text_down;
+	char *text_up;
 };
 
 static bool cmd_run_watch_init(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
-	return data->path;
+	if (!data->path)
+		return false;
+	if (!data->text_down)
+		data->text_down = strdup("Not Running");
+	if (!data->text_up)
+		data->text_up = strdup("Running");
+	return true;
 }
 
 static void cmd_run_watch_destroy(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 	free(data->path);
+	free(data->text_down);
+	free(data->text_up);
 }
 
 static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 
-	data->base.cached_fulltext = "Not Running";
+	data->base.cached_fulltext = data->text_down;
 	int fd = open(data->path, O_RDONLY);
 	if (likely(fd >= 0)) {
 		char buf[64];
@@ -53,7 +63,7 @@ static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 			buf[len] = '\0';
 			pid_t pid = (pid_t)atoi(buf);
 			if (kill(pid, 0) == 0 || errno == EPERM)
-				data->base.cached_fulltext = "Running";
+				data->base.cached_fulltext = data->text_up;
 		}
 		close(fd);
 	}
@@ -63,7 +73,9 @@ static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 #define RUN_WATCH_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_run_watch_data, base.align)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_run_watch_data, base.interval)), \
-	F("path", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, path))
+	F("path", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, path)), \
+	F("text_down", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, text_down)), \
+	F("text_up", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, text_up)), \
 
 CMD_OPTS_GEN_STRUCTS(cmd_run_watch, RUN_WATCH_OPTIONS)
 
