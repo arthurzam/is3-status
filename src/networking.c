@@ -57,7 +57,7 @@ static void setup_netlink(void) {
 		.nl_pid = (uint32_t)getpid()
 	};
 
-	if (bind (g_net_global.netlink_fd, (struct sockaddr *) &addr, sizeof (addr)) < 0) {
+	if (bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
 		fprintf(stderr, "bind(netlink) failed: %s\n", strerror(errno));
 		exit(1);
 	}
@@ -67,29 +67,17 @@ static void setup_netlink(void) {
 
 static void net_query_info(struct net_if_addrs *curr_if) {
 	int fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		fprintf(stderr, "socket(AF_INET) failed: %s\n", strerror(errno));
-		return;
-	}
-	struct ifreq ifr;
-	strncpy (ifr.ifr_name, curr_if->if_name, IFNAMSIZ - 1);
+	if (fd >= 0) {
+		struct ifreq ifr;
+		strncpy(ifr.ifr_name, curr_if->if_name, IFNAMSIZ - 1);
 
-	if (ioctl(fd, SIOCGIFFLAGS, &ifr)) {
-		fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
-		goto out;
-	}
-	curr_if->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
-
-	if (!curr_if->is_down) {
-		if (ioctl(fd, SIOCGIFADDR, &ifr) < 0) {
-			fprintf(stderr, "ioctl(netlink, %s) failed: %s\n", curr_if->if_name, strerror(errno));
-			goto out;
+		if (!ioctl(fd, SIOCGIFFLAGS, &ifr)) {
+			curr_if->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
+			if (!curr_if->is_down && !ioctl(fd, SIOCGIFADDR, &ifr))
+				inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
 		}
-		inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
+		close(fd);
 	}
-
-out:
-	close(fd);
 }
 
 unsigned net_add_if(const char *if_name) {

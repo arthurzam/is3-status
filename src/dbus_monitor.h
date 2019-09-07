@@ -18,8 +18,7 @@
 #ifndef DBUS_MONITOR_H
 #define DBUS_MONITOR_H
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "main.h"
 
 #include <systemd/sd-bus.h>
 
@@ -39,14 +38,17 @@ _Static_assert(sizeof(struct dbus_field) == 2, "incorrect bit width in struct db
 struct dbus_fields_t {
 	const char *const *const names;
 	const struct dbus_field *const opts;
+	bool(*const func_recache)(struct cmd_data_base *data);
 	const unsigned size;
+	const unsigned data_base_offset;
 };
 
-#define DBUS_MONITOR_GEN_FIELDS(name, GEN) \
+#define DBUS_MONITOR_GEN_FIELDS(name, GEN, _func_recache, data_struct, field) \
 	static const char *const name ## _fields_names[] = { GEN(CMD_IMPL_OPTS_GEN_NAME) }; \
 	static const struct dbus_field name ## _fields[] __attribute__ ((aligned (2))) = { GEN(CMD_IMPL_OPTS_GEN_DATA) }; \
 	static const struct dbus_fields_t name = { .names = name ## _fields_names, .opts = name ## _fields, \
-		.size = ARRAY_SIZE(name ## _fields) };
+		.size = ARRAY_SIZE(name ## _fields), .func_recache = _func_recache, \
+		.data_base_offset = offsetof(data_struct, field) };
 
 struct dbus_monitor_base {
 	const struct dbus_fields_t *fields;

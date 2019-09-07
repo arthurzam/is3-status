@@ -95,6 +95,9 @@ static int dbus_monitor_systemd_handler(sd_bus_message *m, void *userdata, sd_bu
 
 	sd_bus_message_skip(m, NULL); // first string is the interface name - unneeded for now
 	dbus_parse_arr_fields(m, userdata);
+	const struct dbus_fields_t *const fields = ((struct dbus_monitor_base *)userdata)->fields;
+	void *data_base = (char*)userdata - fields->data_base_offset;
+	fields->func_recache(data_base);
 	return 0;
 }
 
@@ -102,7 +105,7 @@ static int dbus_monitor_systemd_handler(sd_bus_message *m, void *userdata, sd_bu
 static bool dbus_monitor_handler(void *data) {
 	(void)data;
 	while (0 < sd_bus_process(g_dbus_monitor_bus, NULL));
-	return true;
+	return false;
 }
 
 static bool dbus_monitor_setup() {

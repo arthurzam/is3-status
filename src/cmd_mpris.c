@@ -44,6 +44,8 @@ struct cmd_mpris_data {
 	char cached_output[256];
 };
 
+static bool cmd_mpris_recache(struct cmd_data_base *_data);
+
 #define DBUS_MPRIS_FIELDS(F) \
 	F("Metadata", FIELD_ARR_DICT_EXPAND, 0), \
 	F("PlaybackStatus", FIELD_STR, offsetof(struct dbus_mpris_data, playback_status)), \
@@ -53,7 +55,7 @@ struct cmd_mpris_data {
 	F("xesam:artist", FIELD_ARR_STR_FIRST, offsetof(struct dbus_mpris_data, artist)), \
 	F("xesam:title", FIELD_STR, offsetof(struct dbus_mpris_data, title)), \
 
-DBUS_MONITOR_GEN_FIELDS(cmd_mpris_dbus, DBUS_MPRIS_FIELDS)
+DBUS_MONITOR_GEN_FIELDS(cmd_mpris_dbus, DBUS_MPRIS_FIELDS, cmd_mpris_recache, struct cmd_mpris_data, data)
 
 static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
