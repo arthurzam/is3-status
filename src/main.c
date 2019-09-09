@@ -69,21 +69,9 @@ static FILE *open_config(const char *defPath) {
 	return NULL;
 }
 
-static void setup_global_settings() {
-	if (g_general_settings.color_bad[0] == '\0')
-		memcpy(g_general_settings.color_bad, "#FF0000", 8);
-	if (g_general_settings.color_degraded[0] == '\0')
-		memcpy(g_general_settings.color_degraded, "#FFFF00", 8);
-	if (g_general_settings.color_good[0] == '\0')
-		memcpy(g_general_settings.color_good, "#00FF00", 8);
-	if (g_general_settings.interval == 0)
-		g_general_settings.interval = 1;
-}
-
 static bool handle_click_event(void *arg) {
 	struct runs_list *runs = arg;
 	char input[1024];
-	char errbuf[1024];
 	bool res = false;
 
 	while (fgets(input, sizeof(input), stdin)) {
@@ -95,7 +83,7 @@ static bool handle_click_event(void *arg) {
 		if (*walker == ',')
 			walker++;
 
-		yajl_val node = yajl_tree_parse(walker, errbuf, sizeof(errbuf));
+		yajl_val node = yajl_tree_parse(walker, NULL, 0);
 		if (YAJL_IS_OBJECT(node)) {
 			const char *name = NULL, *instance = NULL;
 			int button = -1;
@@ -146,7 +134,8 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	setup_global_settings();
+	if (g_general_settings.interval <= 0)
+		g_general_settings.interval = 1;
 	FOREACH_RUN(run, &runs) {
 		if (!run->vtable->func_init(run->data)) {
 			fprintf(stderr, "init for %s:%s failed\n", run->vtable->name, run->instance);
@@ -160,7 +149,7 @@ int main(int argc, char *argv[])
 	}
 
 #define WRITE_LEN(str) write(STDOUT_FILENO, str, strlen(str))
-	if (0 > WRITE_LEN("{\"version\":1, \"click_events\": true}\n[\n")) {
+	if (unlikely(0 > WRITE_LEN("{\"version\":1, \"click_events\": true}\n[\n"))) {
 		fprintf(stderr, "unable to send start status bar\n");
 		return 1;
 	}
@@ -177,7 +166,7 @@ int main(int argc, char *argv[])
 	for (unsigned eventNum = 0; (fdpoll_res = fdpoll_run()) >= 0; ++eventNum) {
 		yajl_gen_array_open(json_gen);
 		FOREACH_RUN(run, &runs) {
-			if ((fdpoll_res > 0) || (run->data->interval >= 0 && eventNum % run->data->interval == 0))
+			if ((fdpoll_res > 0) || (run->data->interval > 0 && eventNum % run->data->interval == 0))
 				run->vtable->func_recache(run->data);
 
 #define JSON_OUTPUT(key,value) json_output(json_gen, (key), strlen(key), value, strlen(value))
@@ -198,7 +187,7 @@ int main(int argc, char *argv[])
 		yajl_gen_array_close(json_gen);
 
 		yajl_gen_get_buf(json_gen, (const unsigned char **)(void *)&iov[0].iov_base, &iov[0].iov_len);
-		if (0 > writev(STDOUT_FILENO, iov, 2)) {
+		if (unlikely(0 > writev(STDOUT_FILENO, iov, 2))) {
 			fprintf(stderr, "main: unable to send output, error %s\n", strerror(errno));
 		}
 		yajl_gen_clear(json_gen);

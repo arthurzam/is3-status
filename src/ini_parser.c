@@ -82,6 +82,7 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 	void *dst = (uint8_t *)cmd_data + cmd_option->offset;
 	switch (cmd_option->type) {
 		case OPT_TYPE_STR: {
+			free(*((char **)dst));
 			*((char **)dst) = strdup(value);
 			break;
 		} case OPT_TYPE_LONG: {
@@ -128,7 +129,12 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 	F("interval", OPT_TYPE_LONG, offsetof(struct general_settings_t, interval))
 CMD_OPTS_GEN_STRUCTS(general, GENERAL_OPTIONS)
 static const struct cmd_opts general_opts = CMD_OPTS_GEN_DATA(general);
-struct general_settings_t g_general_settings = {0};
+struct general_settings_t g_general_settings = {
+	.interval = 1,
+	.color_bad = "#FF0000",
+	.color_degraded = "#FFFF00",
+	.color_good = "#00FF00"
+};
 
 struct runs_list ini_parse(FILE *ini) {
 	struct run_instance *runs = NULL, *curr = NULL;

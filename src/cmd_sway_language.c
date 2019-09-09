@@ -136,8 +136,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 
 	/* parse msg */
 	{
-		char errbuf[1024];
-		yajl_val node = yajl_tree_parse(data->buffer, errbuf, sizeof(errbuf));
+		yajl_val node = yajl_tree_parse(data->buffer, NULL, 0);
 
 		if (YAJL_IS_ARRAY(node)) {
 			for (size_t i = 0; i < node->u.array.len; ++i ) {
