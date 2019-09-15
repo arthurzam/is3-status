@@ -29,25 +29,25 @@
 struct cmd_x11_language_data {
 	struct cmd_data_base base;
 
-	char *lan1_def;
-	char *lan1_upper;
-	char *lan2_def;
-	char *lan2_upper;
-
 	Display *dpy;
 	int xkbEventType;
 
 	char *display;
+
+	char *lan1_def;
+	char *lan1_upper;
+	char *lan2_def;
+	char *lan2_upper;
 };
 
 static bool cmd_x11_language_recache(struct cmd_data_base *_data);
 
 bool handle_x11_lan_events(void *arg) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)arg;
-	XEvent e;
 
+	XEvent e;
 	XNextEvent(data->dpy, &e);
-	if (e.type == data->xkbEventType) {
+	if (likely(e.type == data->xkbEventType)) {
 		XkbEvent *xkbEvent = (XkbEvent *)&e;
 		if (xkbEvent->any.xkb_type == XkbStateNotify || xkbEvent->any.xkb_type == XkbIndicatorStateNotify)
 			cmd_x11_language_recache(arg);
@@ -58,11 +58,7 @@ bool handle_x11_lan_events(void *arg) {
 static bool cmd_x11_language_init(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
-	const char *display = data->display;
-	if (!data->display && !(display = getenv("DISPLAY")))
-		display = ":0";
-
-	data->dpy = XOpenDisplay(display);
+	data->dpy = XOpenDisplay(data->display);
 	free(data->display);
 	data->display = NULL;
 	if (!data->dpy)

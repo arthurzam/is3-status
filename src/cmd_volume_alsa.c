@@ -45,13 +45,13 @@ struct cmd_volume_alsa_data {
 
 static bool cmd_volume_alsa_recache(struct cmd_data_base *_data);
 
-static int handle_mixer_event(snd_mixer_elem_t *elem, unsigned int mask) {
+static int cmd_volume_alsa_mixer_event(snd_mixer_elem_t *elem, unsigned int mask) {
 	if (mask & SND_CTL_EVENT_MASK_VALUE)
 		cmd_volume_alsa_recache((struct cmd_data_base *)snd_mixer_elem_get_callback_private(elem));
 	return 0;
 }
 
-static bool handle_alsa_read(void *arg) {
+static bool handle_volume_alsa_read(void *arg) {
 	snd_mixer_t *handle = (snd_mixer_t *)arg;
 	snd_mixer_handle_events(handle);
 	return false;
@@ -114,14 +114,14 @@ static bool cmd_volume_alsa_init(struct cmd_data_base *_data) {
 
 	/* add callback for mixer */
 	{
-		snd_mixer_elem_set_callback(data->elem, handle_mixer_event);
+		snd_mixer_elem_set_callback(data->elem, cmd_volume_alsa_mixer_event);
 		snd_mixer_elem_set_callback_private(data->elem, data);
 
 		unsigned count = (unsigned)snd_mixer_poll_descriptors_count(data->mixer);
 		struct pollfd *polls = alloca(sizeof(struct pollfd) * count);
 		count = (unsigned)snd_mixer_poll_descriptors(data->mixer, polls, count);
 		for (unsigned i = 0; i < count; ++i)
-			fdpoll_add(polls[i].fd, handle_alsa_read, data->mixer);
+			fdpoll_add(polls[i].fd, handle_volume_alsa_read, data->mixer);
 	}
 
 	data->base.cached_fulltext = data->cached_output;

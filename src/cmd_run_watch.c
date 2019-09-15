@@ -61,7 +61,7 @@ static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 		ssize_t len = read(fd, buf, sizeof(buf) - 1);
 		if (likely(len > 0)) {
 			buf[len] = '\0';
-			pid_t pid = (pid_t)atoi(buf);
+			pid_t pid = (pid_t)atol(buf);
 			if (kill(pid, 0) == 0 || errno == EPERM)
 				data->base.cached_fulltext = data->text_up;
 		}

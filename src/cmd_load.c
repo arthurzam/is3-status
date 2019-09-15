@@ -27,11 +27,15 @@
 struct cmd_load_data {
 	struct cmd_data_base base;
 	char *format;
+	int fd;
 	char cached_output[256];
 };
 
 static bool cmd_load_init(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
+	data->fd = open("/proc/loadavg", O_RDONLY);
+	if (data->fd < 0)
+		return false;
 	data->base.cached_fulltext = data->cached_output;
 	return data->format;
 }
@@ -39,6 +43,7 @@ static bool cmd_load_init(struct cmd_data_base *_data) {
 static void cmd_load_destroy(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 	free(data->format);
+	close(data->fd);
 }
 
 // generaterd using command ./scripts/gen-format.py 123
@@ -47,26 +52,23 @@ VPRINT_OPTS(cmd_load_var_options, {0x00000000, 0x000E0000, 0x00000000, 0x0000000
 static bool cmd_load_recache(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 
-	int fd = open("/proc/loadavg", O_RDONLY);
-	if (likely(fd >= 0)) {
-		char buf[65];
-		ssize_t len = read(fd, buf, sizeof(buf) - 1);
-		if (likely(len > 0)) {
-			buf[len] = '\0';
-			const char *loadavgs[3] = {NULL, NULL, NULL};
-			char *tmp = buf;
-			for (unsigned i = 0; i < 3; i++) {
-				loadavgs[i] = tmp;
-				tmp = strchr(tmp, ' ');
-				*(tmp++) = '\0';
-			}
-			int res;
-			struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-			while ((res = vprint_walk(&ctx)) >= 0) {
-				vprint_strcat(&ctx, loadavgs[res - '1']);
-			}
+	char buf[65];
+	lseek(data->fd, 0, SEEK_SET);
+	ssize_t len = read(data->fd, buf, sizeof(buf) - 1);
+	if (likely(len > 0)) {
+		buf[len] = '\0';
+		const char *loadavgs[3] = {NULL, NULL, NULL};
+		char *tmp = buf;
+		for (unsigned i = 0; i < 3; i++) {
+			loadavgs[i] = tmp;
+			tmp = strchr(tmp, ' ');
+			*(tmp++) = '\0';
 		}
-		close(fd);
+		int res;
+		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+		while ((res = vprint_walk(&ctx)) >= 0) {
+			vprint_strcat(&ctx, loadavgs[res - '1']);
+		}
 	}
 	return true;
 }
