@@ -119,7 +119,7 @@ bool handle_netlink_read(void *arg) {
 				case NLMSG_ERROR:
 					fprintf(stderr, "read_netlink: some kind of error\n");
 					/* fall through */
-				case NLMSG_DONE: // Finished reading
+				case NLMSG_DONE:
 					return res;
 				case RTM_DELLINK:
 					isDel = true;
@@ -180,9 +180,7 @@ bool handle_netlink_read(void *arg) {
 			}
 		}
 	}
-	if (status == 0) {
-		fprintf(stderr, "netlink_read : EOF\n");
-	} else if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
+	if (status < 0 && errno != EWOULDBLOCK && errno != EAGAIN) {
 		fprintf(stderr, "recv(netlink) failed: %s\n", strerror(errno));
 	}
 	return res;

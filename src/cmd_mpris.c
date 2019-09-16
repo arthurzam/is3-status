@@ -69,7 +69,6 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	if (!data->format_playing)
 		data->format_playing = strdup("%T");
 
-	sd_bus_error error = SD_BUS_ERROR_NULL;
 	int r = sd_bus_open_user(&data->bus);
 	if (r < 0) {
 		fprintf(stderr, "mpris: Failed to connect to user bus: %s\n", strerror(-r));
@@ -80,19 +79,14 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 	dbus_add_watcher(data->mpris_service, "/org/mpris/MediaPlayer2", &data->data);
 
 	sd_bus_get_property_string(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
-							   "org.mpris.MediaPlayer2.Player", "PlaybackStatus", &error, &data->data.playback_status);
-	sd_bus_error_free(&error);
-
+							   "org.mpris.MediaPlayer2.Player", "PlaybackStatus", NULL, &data->data.playback_status);
 	sd_bus_get_property_trivial(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 								"org.mpris.MediaPlayer2.Player", "Position",
-								&error, SD_BUS_TYPE_INT64, &data->data.position);
-	sd_bus_error_free(&error);
-
+								NULL, SD_BUS_TYPE_INT64, &data->data.position);
 	sd_bus_message *reply = NULL;
 	if (0 <= sd_bus_get_property(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
-								 "org.mpris.MediaPlayer2.Player", "Metadata", &error, &reply, "a{sv}"))
+								 "org.mpris.MediaPlayer2.Player", "Metadata", NULL, &reply, "a{sv}"))
 		dbus_parse_arr_fields(reply, &data->data);
-	sd_bus_error_free(&error);
 	sd_bus_message_unref(reply);
 
 	data->base.cached_fulltext = data->cached_output;
@@ -103,13 +97,13 @@ static bool cmd_mpris_init(struct cmd_data_base *_data) {
 static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 	free(data->mpris_service);
-	free(data->format_paused);
 	free(data->format_playing);
+	free(data->format_paused);
 	free(data->format_stopped);
 
-	free(data->data.album);
-	free(data->data.artist);
 	free(data->data.title);
+	free(data->data.artist);
+	free(data->data.album);
 	free(data->data.playback_status);
 
 	sd_bus_unref(data->bus);
@@ -184,13 +178,9 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 		default:
 			return false;
 	}
-	sd_bus_error error = SD_BUS_ERROR_NULL;
-	int r = sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
-							   "org.mpris.MediaPlayer2.Player", op, &error, NULL, NULL);
-	if (r < 0)
-		fprintf(stderr, "mpris: failed click event %s with: %s\n", op, error.message);
-	sd_bus_error_free(&error);
-	return r >= 0;
+	sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+					   "org.mpris.MediaPlayer2.Player", op, NULL, NULL, NULL);
+	return false;
 }
 
 #define MPRIS_OPTIONS(F) \

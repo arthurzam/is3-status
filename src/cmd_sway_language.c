@@ -42,7 +42,7 @@ struct msg_header_t {
 	uint32_t size;
 	uint32_t type;
 } __attribute__((packed));
-_Static_assert(sizeof (struct msg_header_t) == 14, "incorrect size for struct msg_header_t");
+_Static_assert(sizeof(struct msg_header_t) == 14, "incorrect size for struct msg_header_t");
 
 static char *cmd_sway_language_get_socketpath(void) {
 	const char *sock = getenv("SWAYSOCK");
@@ -109,28 +109,28 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 	{
 		struct msg_header_t recv_buf;
 		size_t total = 0;
-		while (total < sizeof(recv_buf)) {
+		do {
 			ssize_t received = recv(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return false;
 			}
 			total += (size_t)received;
-		}
+		} while (total < sizeof(recv_buf));
 
 		if (data->buffer_size < recv_buf.size + 1) {
 			data->buffer_size = recv_buf.size + 1;
 			data->buffer = realloc(data->buffer, data->buffer_size);
 		}
 		total = 0;
-		while (total < recv_buf.size) {
+		do {
 			ssize_t received = recv(data->socketfd, data->buffer + total, recv_buf.size - total, 0);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return false;
 			}
 			total += (size_t)received;
-		}
+		} while (total < recv_buf.size);
 		data->buffer[recv_buf.size] = '\0';
 	}
 
@@ -138,7 +138,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 	{
 		yajl_val node = yajl_tree_parse(data->buffer, NULL, 0);
 
-		if (YAJL_IS_ARRAY(node)) {
+		if (likely(YAJL_IS_ARRAY(node))) {
 			for (size_t i = 0; i < node->u.array.len; ++i ) {
 				char *xkb_active_layout_name = NULL;
 				int found = 0;

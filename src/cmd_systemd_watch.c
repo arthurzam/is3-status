@@ -19,7 +19,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include <systemd/sd-bus.h>
 
@@ -74,20 +73,14 @@ static void cmd_systemd_watch_destroy(struct cmd_data_base *_data) {
 static bool cmd_systemd_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_systemd_watch_data *data = (struct cmd_systemd_watch_data *)_data;
 
-	sd_bus_error error = SD_BUS_ERROR_NULL;
-	int r;
-
 	free(data->base.cached_fulltext);
 	data->base.cached_fulltext = NULL;
-	if (0 > (r = sd_bus_get_property_string(data->bus,
-											"org.freedesktop.systemd1", data->unit_path,
-											"org.freedesktop.systemd1.Unit", "ActiveState",
-											&error, &data->base.cached_fulltext))) {
-		fprintf(stderr, "systemd_watch: Failed to get property \'ActiveState\': %s\n", error.message);
-	}
-	sd_bus_error_free(&error);
+	int r = sd_bus_get_property_string(data->bus,
+									   "org.freedesktop.systemd1", data->unit_path,
+									   "org.freedesktop.systemd1.Unit", "ActiveState",
+									   NULL, &data->base.cached_fulltext);
 
-	return true;
+	return r >= 0;
 }
 
 #define SYSTEMD_WATCH_OPTIONS(F) \

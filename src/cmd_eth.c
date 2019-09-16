@@ -20,7 +20,6 @@
 #include "networking.h"
 
 #include <string.h>
-#include <stdio.h>
 
 struct cmd_eth_data {
 	struct cmd_data_base base;

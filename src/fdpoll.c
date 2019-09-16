@@ -16,6 +16,7 @@
 */
 
 #include "fdpoll.h"
+#include "main.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,11 +43,12 @@ void fdpoll_add(int fd, bool(*func_handle)(void *), void *data) {
 	g_fdpoll.data = (struct fdpoll_data *)realloc(g_fdpoll.data, sizeof(struct fdpoll_data) * g_fdpoll.size);
 
 	int flags;
-	if (0 <= (flags = fcntl(fd, F_GETFL, 0)))
+	if (likely(0 <= (flags = fcntl(fd, F_GETFL, 0))))
 		fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
 	g_fdpoll.fds[s].fd = fd;
 	g_fdpoll.fds[s].events = POLLIN;
+	g_fdpoll.fds[s].revents = 0;
 	g_fdpoll.data[s].data = data;
 	g_fdpoll.data[s].func_handle = func_handle;
 }
@@ -62,7 +64,7 @@ int fdpoll_run(void) {
 	int ret = poll(fds, g_fdpoll.size, 1000);
 #endif
 	int res = 0;
-	if (ret < 0) {
+	if (unlikely(ret < 0)) {
 		fprintf(stderr, "fdpoll: failed with %s\n", strerror(errno));
 		return -1;
 	} else if (ret > 0) {
