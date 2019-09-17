@@ -91,7 +91,7 @@ static int cmd_sway_language_open_socket(void) {
 	return socketfd;
 }
 
-static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
+static void cmd_sway_language_query(struct cmd_sway_language_data *data) {
 	/* send msg on IPC */
 	{
 		static const struct msg_header_t msg = {
@@ -101,7 +101,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 		};
 		if (0 > write(data->socketfd, &msg, sizeof(msg))) {
 			fprintf(stderr, "sway-language: unable to send request, error %s\n", strerror(errno));
-			return false;
+			return;
 		}
 	}
 
@@ -113,7 +113,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 			ssize_t received = recv(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
-				return false;
+				return;
 			}
 			total += (size_t)received;
 		} while (total < sizeof(recv_buf));
@@ -127,7 +127,7 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 			ssize_t received = recv(data->socketfd, data->buffer + total, recv_buf.size - total, 0);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
-				return false;
+				return;
 			}
 			total += (size_t)received;
 		} while (total < recv_buf.size);
@@ -161,15 +161,13 @@ static bool cmd_sway_language_query(struct cmd_sway_language_data *data) {
 							free(data->base.cached_fulltext);
 							data->base.cached_fulltext = strdup(xkb_active_layout_name);
 						}
-						yajl_tree_free(node);
-						return true;
+						goto _exit;
 					}
 				}
 			}
 		}
+_exit:
 		yajl_tree_free(node);
-
-		return false;
 	}
 }
 
@@ -192,10 +190,9 @@ static void cmd_sway_language_destroy(struct cmd_data_base *_data) {
 	free(data->base.cached_fulltext);
 }
 
-static bool cmd_sway_language_recache(struct cmd_data_base *_data) {
+static void cmd_sway_language_recache(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
-
-	return cmd_sway_language_query(data);
+	cmd_sway_language_query(data);
 }
 
 #define SWAY_LANG_OPTIONS(F) \

@@ -58,7 +58,7 @@ static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py cf
 VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
-static bool cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
+static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
 	int curr_value = -1;
@@ -91,8 +91,6 @@ static bool cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 		CMD_COLOR_SET(data, g_general_settings.color_bad);
 	else
 		CMD_COLOR_CLEAN(data);
-
-	return true;
 }
 
 #define CPU_TEMP_OPTIONS(F) \

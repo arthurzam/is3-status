@@ -53,7 +53,7 @@ static void cmd_date_destroy(struct cmd_data_base *_data) {
 	free(data->timezone);
 }
 
-static bool cmd_date_recache(struct cmd_data_base *_data) {
+static void cmd_date_recache(struct cmd_data_base *_data) {
 	struct cmd_date_data *data = (struct cmd_date_data *)_data;
 
 	if (data->timezone != g_curr_tz) {
@@ -69,8 +69,6 @@ static bool cmd_date_recache(struct cmd_data_base *_data) {
 	time_t t = time(NULL);
 	localtime_r(&t, &tm);
 	strftime(data->cached_output, sizeof(data->cached_output), data->format, &tm);
-
-	return true;
 }
 
 #define DATE_OPTIONS(F) \

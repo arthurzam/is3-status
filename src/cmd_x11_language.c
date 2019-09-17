@@ -39,7 +39,7 @@ struct cmd_x11_language_data {
 	char *lan2_upper;
 };
 
-static bool cmd_x11_language_recache(struct cmd_data_base *_data);
+static void cmd_x11_language_recache(struct cmd_data_base *_data);
 
 bool handle_x11_lan_events(void *arg) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)arg;
@@ -98,7 +98,7 @@ static void cmd_x11_language_destroy(struct cmd_data_base *_data) {
 	XCloseDisplay(data->dpy);
 }
 
-static bool cmd_x11_language_recache(struct cmd_data_base *_data) {
+static void cmd_x11_language_recache(struct cmd_data_base *_data) {
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
 	XKeyboardState values;
@@ -123,8 +123,6 @@ static bool cmd_x11_language_recache(struct cmd_data_base *_data) {
 			BAT_POS_CHECK(2, lan2_def);
 			BAT_POS_CHECK(3, lan2_upper);
 #undef BAT_POS_CHECK
-
-	return true;
 }
 
 #define X11_LANG_OPTIONS(F) \

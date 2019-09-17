@@ -49,7 +49,7 @@ static void cmd_load_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py 123
 VPRINT_OPTS(cmd_load_var_options, {0x00000000, 0x000E0000, 0x00000000, 0x00000000});
 
-static bool cmd_load_recache(struct cmd_data_base *_data) {
+static void cmd_load_recache(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 
 	char buf[65];
@@ -70,7 +70,6 @@ static bool cmd_load_recache(struct cmd_data_base *_data) {
 			vprint_strcat(&ctx, loadavgs[res - '1']);
 		}
 	}
-	return true;
 }
 
 #define LOAD_OPTIONS(F) \

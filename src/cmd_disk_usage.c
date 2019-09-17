@@ -55,7 +55,7 @@ static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./scripts/gen-format.py aAfFtuU
 VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00200042, 0x00300042});
 
-static bool cmd_disk_usage_recache(struct cmd_data_base *_data) {
+static void cmd_disk_usage_recache(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 
 	struct statvfs buf;
@@ -82,8 +82,6 @@ static bool cmd_disk_usage_recache(struct cmd_data_base *_data) {
 		else
 			CMD_COLOR_CLEAN(data);
 	}
-
-	return true;
 }
 
 #define DISK_USAGE_OPTIONS(F) \

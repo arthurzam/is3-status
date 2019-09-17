@@ -81,7 +81,8 @@ enum click_event {
 
 #define CMD_USE_ALIGNMENT 8
 struct cmd {
-	bool(*func_recache)(struct cmd_data_base *data);
+	const char *const name;
+	void(*func_recache)(struct cmd_data_base *data);
 	bool(*func_cevent)(struct cmd_data_base *data, int event);
 	/**
 	 * @brief Initialize the instance
@@ -96,7 +97,6 @@ struct cmd {
 	 */
 	void(*func_destroy)(struct cmd_data_base *data);
 
-	const char *const name;
 	const struct cmd_opts opts;
 	const unsigned data_size;
 } __attribute__ ((aligned (CMD_USE_ALIGNMENT)));

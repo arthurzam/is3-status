@@ -43,7 +43,7 @@ struct cmd_volume_alsa_data {
 	char cached_output[256];
 };
 
-static bool cmd_volume_alsa_recache(struct cmd_data_base *_data);
+static void cmd_volume_alsa_recache(struct cmd_data_base *_data);
 
 static int cmd_volume_alsa_mixer_event(snd_mixer_elem_t *elem, unsigned int mask) {
 	if (mask & SND_CTL_EVENT_MASK_VALUE)
@@ -144,7 +144,7 @@ static void cmd_volume_alsa_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./gen-format.py vV
 VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
-static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
+static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 
 	int res;
@@ -171,8 +171,6 @@ static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	while ((res = vprint_walk(&ctx)) >= 0) {
 		vprint_itoa(&ctx, volume);
 	}
-
-	return true;
 }
 
 static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {

@@ -44,7 +44,7 @@ struct cmd_mpris_data {
 	char cached_output[256];
 };
 
-static bool cmd_mpris_recache(struct cmd_data_base *_data);
+static void cmd_mpris_recache(struct cmd_data_base *_data);
 
 #define DBUS_MPRIS_FIELDS(F) \
 	F("Metadata", FIELD_ARR_DICT_EXPAND, 0), \
@@ -112,7 +112,7 @@ static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 // generaterd using command ./gen-format.py AalpTt
 VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x00111002});
 
-static bool cmd_mpris_recache(struct cmd_data_base *_data) {
+static void cmd_mpris_recache(struct cmd_data_base *_data) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 
 	const char *output_format = data->format_stopped;
@@ -159,7 +159,6 @@ static bool cmd_mpris_recache(struct cmd_data_base *_data) {
 				break;
 		}
 	}
-	return true;
 }
 
 static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {

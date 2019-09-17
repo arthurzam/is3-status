@@ -51,7 +51,7 @@ static void cmd_run_watch_destroy(struct cmd_data_base *_data) {
 	free(data->text_up);
 }
 
-static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
+static void cmd_run_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_run_watch_data *data = (struct cmd_run_watch_data *)_data;
 
 	data->base.cached_fulltext = data->text_down;
@@ -67,7 +67,6 @@ static bool cmd_run_watch_recache(struct cmd_data_base *_data) {
 		}
 		close(fd);
 	}
-	return true;
 }
 
 #define RUN_WATCH_OPTIONS(F) \

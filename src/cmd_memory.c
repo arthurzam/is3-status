@@ -106,7 +106,7 @@ _exit:
 // generaterd using command ./scripts/gen-format.py AaFfSstUu
 VPRINT_OPTS(cmd_memory_data_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
 
-static bool cmd_memory_recache(struct cmd_data_base *_data) {
+static void cmd_memory_recache(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 
 	struct memory_info_t info = {0};
@@ -137,8 +137,6 @@ static bool cmd_memory_recache(struct cmd_data_base *_data) {
 		else
 			CMD_COLOR_CLEAN(data);
 	}
-
-	return true;
 }
 
 #define MEMORY_OPTIONS(F) \

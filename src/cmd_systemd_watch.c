@@ -70,17 +70,14 @@ static void cmd_systemd_watch_destroy(struct cmd_data_base *_data) {
 	free(data->base.cached_fulltext);
 }
 
-static bool cmd_systemd_watch_recache(struct cmd_data_base *_data) {
+static void cmd_systemd_watch_recache(struct cmd_data_base *_data) {
 	struct cmd_systemd_watch_data *data = (struct cmd_systemd_watch_data *)_data;
 
 	free(data->base.cached_fulltext);
 	data->base.cached_fulltext = NULL;
-	int r = sd_bus_get_property_string(data->bus,
-									   "org.freedesktop.systemd1", data->unit_path,
-									   "org.freedesktop.systemd1.Unit", "ActiveState",
-									   NULL, &data->base.cached_fulltext);
-
-	return r >= 0;
+	sd_bus_get_property_string(data->bus, "org.freedesktop.systemd1", data->unit_path,
+							   "org.freedesktop.systemd1.Unit", "ActiveState",
+							   NULL, &data->base.cached_fulltext);
 }
 
 #define SYSTEMD_WATCH_OPTIONS(F) \

@@ -154,7 +154,7 @@ static bool cmd_battery_parse_file(const char *path, struct battery_info_t *info
 // generaterd using command ./scripts/gen-format.py bBt
 VPRINT_OPTS(cmd_battery_data_var_options, {0x00000000, 0x00000000, 0x00000004, 0x00100004});
 
-static bool cmd_battery_recache(struct cmd_data_base *_data) {
+static void cmd_battery_recache(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
 	struct battery_info_t info = {BAT_STS_DISCHARGIUNG, -1, -1, -1, -1, -1, -1};
@@ -226,8 +226,6 @@ _Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_ba
 				break;
 		}
 	}
-
-	return true;
 }
 
 #define BAT_OPTIONS(F) \
