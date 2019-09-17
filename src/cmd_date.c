@@ -31,21 +31,19 @@ struct cmd_date_data {
 };
 
 static const char *g_curr_tz = NULL;
-static const char *g_local_tz = NULL;
 
 static bool cmd_date_init(struct cmd_data_base *_data) {
 	struct cmd_date_data *data = (struct cmd_date_data *)_data;
 	if (!data->format)
 		return false;
 
-	if (!g_local_tz)
-		g_local_tz = getenv("TZ");
-
-	if (!data->timezone && g_local_tz)
-		data->timezone = strdup(g_local_tz);
+	if (!data->timezone) {
+		const char *local_tz = getenv("TZ");
+		if (local_tz)
+			data->timezone = strdup(local_tz);
+	}
 
 	data->base.cached_fulltext = data->cached_output;
-
 	return true;
 }
 

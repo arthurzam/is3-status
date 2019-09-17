@@ -20,6 +20,13 @@
 
 #include <stdbool.h>
 
+/**
+ * @brief fdpoll_add add watch for @arg fd and call the callback function
+ *
+ * @param fd file descriptor to watch for POLLIN events
+ * @param func_handle the callback function
+ * @param data arg to pass for callback function
+ */
 void fdpoll_add(int fd, bool(*func_handle)(void *data), void *data);
 int fdpoll_run(void);
 

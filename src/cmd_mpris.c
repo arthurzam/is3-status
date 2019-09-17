@@ -165,7 +165,7 @@ static bool cmd_mpris_recache(struct cmd_data_base *_data) {
 static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 	const char *op = NULL;
-	switch(event) {
+	switch (event) {
 		case CEVENT_MOUSE_MIDDLE:
 			op = "PlayPause";
 			break;

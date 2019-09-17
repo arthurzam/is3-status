@@ -178,7 +178,7 @@ static bool cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 	int res;
-	switch(event) {
+	switch (event) {
 		case CEVENT_MOUSE_MIDDLE:
 			if (data->supportes_mute) {
 				int pbval;
