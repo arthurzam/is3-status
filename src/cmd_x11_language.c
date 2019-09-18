@@ -125,6 +125,29 @@ static void cmd_x11_language_recache(struct cmd_data_base *_data) {
 #undef BAT_POS_CHECK
 }
 
+static bool cmd_x11_language_cevent(struct cmd_data_base *_data, int event) {
+	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
+
+	unsigned toogle_mask, check_mask;
+	switch (event) {
+		case CEVENT_MOUSE_LEFT: // Num Lock
+			toogle_mask = 0x10;
+			check_mask = (1U << 1);
+			break;
+		case CEVENT_MOUSE_RIGHT: // Caps Lock
+			toogle_mask = 0x02;
+			check_mask = (1U << 0);
+			break;
+		default: return false;
+	}
+	XKeyboardState values;
+	XGetKeyboardControl(data->dpy, &values);
+	unsigned value_mask = ((values.led_mask & check_mask) == 0) ? toogle_mask : 0;
+	XkbLockModifiers(data->dpy, XkbUseCoreKbd, toogle_mask, value_mask);
+	cmd_x11_language_recache(_data);
+	return false;
+}
+
 #define X11_LANG_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_x11_language_data, base.align)), \
 	F("display", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, display)), \
@@ -142,5 +165,6 @@ DECLARE_CMD(cmd_x11_language) = {
 
 	.func_init = cmd_x11_language_init,
 	.func_destroy = cmd_x11_language_destroy,
-	.func_recache = cmd_x11_language_recache
+	.func_recache = cmd_x11_language_recache,
+	.func_cevent = cmd_x11_language_cevent
 };
