@@ -46,7 +46,7 @@ static bool cmd_eth_init(struct cmd_data_base *_data) {
 	data->if_pos = net_add_if(data->interface);
 	// data->interface is used in inner networking array
 
-	return true;
+	return data->if_pos != NET_ADD_IF_FAILED;
 }
 
 static void cmd_eth_destroy(struct cmd_data_base *_data) {

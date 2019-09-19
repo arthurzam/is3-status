@@ -32,6 +32,7 @@ extern struct net_global_t {
 	int netlink_fd;
 } g_net_global;
 
+#define NET_ADD_IF_FAILED ((unsigned)-1)
 unsigned net_add_if(const char *if_name);
 
 #endif // NETWORKING_H

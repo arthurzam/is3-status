@@ -62,7 +62,7 @@ struct cmd_opts {
 	const char *const *const names;
 	const struct cmd_option *const opts;
 	const unsigned size;
-};
+} __attribute__((packed));
 
 struct cmd_data_base {
 	const char *align;
@@ -81,24 +81,24 @@ enum click_event {
 
 #define CMD_USE_ALIGNMENT 8
 struct cmd {
-	const char *const name;
+	const char *const name; ///< name of module
 	void(*func_recache)(struct cmd_data_base *data);
 	bool(*func_cevent)(struct cmd_data_base *data, int event);
 	/**
 	 * @brief Initialize the instance
 	 *
-	 * This function is called after config was loaded!
+	 * This function is called after config was loaded and before all other module's functions
 	 */
 	bool(*func_init)(struct cmd_data_base *data);
 	/**
-	 * @brief Free all memory in data
+	 * @brief Free all resources used in data
 	 *
 	 * Shouldn't free the data structure itself
 	 */
 	void(*func_destroy)(struct cmd_data_base *data);
 
 	const struct cmd_opts opts;
-	const unsigned data_size;
+	const unsigned data_size; ///< size of module's data, which is allocated and set before call to func_init
 } __attribute__ ((aligned (CMD_USE_ALIGNMENT)));
 #define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array"), aligned(CMD_USE_ALIGNMENT)))
 

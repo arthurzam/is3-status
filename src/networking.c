@@ -17,6 +17,7 @@
 
 #include "networking.h"
 #include "fdpoll.h"
+#include "main.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,46 +40,16 @@
 struct net_global_t g_net_global = {
 	.ifs_arr = NULL,
 	.ifs_size = 0,
-	.netlink_fd = -1
+	.netlink_fd = 0
 };
+/*
+ * To optimize here, we use STDIN_FILENO as a held fd, so we can assume
+ * that socket(...) won't return STDIN_FILENO. In case it asserts, change
+ * back to -1 for g_net_global.netlink_fd
+ */
+_Static_assert(STDIN_FILENO == 0, "look at comment");
 
 static bool handle_netlink_read(void *arg);
-
-static void setup_netlink(void) {
-	g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
-	if (g_net_global.netlink_fd < 0) {
-		fprintf(stderr, "socket(netlink) failed: %s\n", strerror(errno));
-		exit(1);
-	}
-
-	struct sockaddr_nl addr = {
-		.nl_family = AF_NETLINK,
-		.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR,
-		.nl_pid = (uint32_t)getpid()
-	};
-
-	if (bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-		fprintf(stderr, "bind(netlink) failed: %s\n", strerror(errno));
-		exit(1);
-	}
-
-	fdpoll_add(g_net_global.netlink_fd, handle_netlink_read, NULL);
-}
-
-static void net_query_info(struct net_if_addrs *curr_if) {
-	int fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (fd >= 0) {
-		struct ifreq ifr;
-		strncpy(ifr.ifr_name, curr_if->if_name, IFNAMSIZ - 1);
-
-		if (!ioctl(fd, SIOCGIFFLAGS, &ifr)) {
-			curr_if->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
-			if (!curr_if->is_down && !ioctl(fd, SIOCGIFADDR, &ifr))
-				inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr_if->if_ip4, sizeof(curr_if->if_ip4));
-		}
-		close(fd);
-	}
-}
 
 unsigned net_add_if(const char *if_name) {
 	++g_net_global.ifs_size;
@@ -90,10 +61,39 @@ unsigned net_add_if(const char *if_name) {
 	curr->if_ip6[0] = '\0';
 	curr->is_down = true;
 
-	if (g_net_global.netlink_fd < 0)
-		setup_netlink();
+	if (g_net_global.netlink_fd == 0) {
+		g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+		if (g_net_global.netlink_fd < 0) {
+			fprintf(stderr, "netlink: socket failed: %s\n", strerror(errno));
+			return NET_ADD_IF_FAILED;
+		}
 
-	net_query_info(curr);
+		struct sockaddr_nl addr = {
+			.nl_family = AF_NETLINK,
+			.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR | RTMGRP_IPV6_IFADDR,
+			.nl_pid = (uint32_t)getpid()
+		};
+
+		if (bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+			fprintf(stderr, "netlink: bind failed: %s\n", strerror(errno));
+			return NET_ADD_IF_FAILED;
+		}
+
+		fdpoll_add(g_net_global.netlink_fd, handle_netlink_read, NULL);
+	}
+
+	int fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (likely(fd >= 0)) {
+		struct ifreq ifr;
+		strncpy(ifr.ifr_name, curr->if_name, IFNAMSIZ - 1);
+
+		if (!ioctl(fd, SIOCGIFFLAGS, &ifr)) {
+			curr->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
+			if (!curr->is_down && !ioctl(fd, SIOCGIFADDR, &ifr))
+				inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr->if_ip4, sizeof(curr->if_ip4));
+		}
+		close(fd);
+	}
 
 	return g_net_global.ifs_size - 1;
 }
