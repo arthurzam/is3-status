@@ -21,9 +21,14 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+
 struct cmd_memory_data {
 	struct cmd_data_base base;
 
+	int fd;
 	char *format;
 
 	long use_decimal;
@@ -44,12 +49,14 @@ static bool cmd_memory_init(struct cmd_data_base *_data) {
 	data->use_method_classical = !!data->use_method_classical;
 	data->base.cached_fulltext = data->cached_output;
 
-	return true;
+	data->fd = open("/proc/meminfo", O_RDONLY);
+	return data->fd >= 0;
 }
 
 static void cmd_memory_destroy(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 	free(data->format);
+	close(data->fd);
 }
 
 struct memory_info_t {
@@ -61,7 +68,7 @@ struct memory_info_t {
 	int64_t ram_shared;
 } __attribute__ ((aligned (sizeof(int64_t))));
 
-static bool cmd_memory_file(struct memory_info_t *info) {
+__attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t *info, int fd) {
 #define MEM_OPT(str, field) {str, X_STRLEN(str), offsetof(struct memory_info_t, field) / sizeof(uint64_t)}
 	static const struct {
 		// 14 is the longest("MemAvailable:") + 1
@@ -79,27 +86,31 @@ static bool cmd_memory_file(struct memory_info_t *info) {
 	};
 #undef MEM_OPT
 
-	FILE *memFile = fopen("/proc/meminfo", "r");
-	if (!memFile)
-		return false;
-	unsigned found = 0;
-	char line[128];
-	while (fgets(line, sizeof(line), memFile)) {
-		unsigned pos = 0;
-		do {
-			const int cmp_res = memcmp(g_mem_opts[pos].str, line, g_mem_opts[pos].str_len);
-			if (cmp_res == 0) {
-				int64_t *const dst = ((int64_t *)info) + g_mem_opts[pos].offset;
-				*dst = atoll(line + g_mem_opts[pos].str_len) * 1024;
-				if (++found == ARRAY_SIZE(g_mem_opts))
-					goto _exit; // found all
-				break;
-			} else
-				pos = (2 * pos) + (1 + !!(cmp_res < 0));
-		} while (pos < ARRAY_SIZE(g_mem_opts));
+	char buffer[2048];
+	ssize_t buf_len;
+	unsigned offset = 0, found = 0;
+	lseek(fd, 0, SEEK_SET);
+	while (0 < (buf_len = offset + read(fd, buffer + offset, sizeof(buffer) - 1 - offset))) {
+		buffer[buf_len] = '\0';
+		char *endl, *start = buffer;
+		while (NULL != (endl = strchr(start, '\n'))) {
+			unsigned pos = 0;
+			do {
+				const int cmp_res = memcmp(g_mem_opts[pos].str, start, g_mem_opts[pos].str_len);
+				if (cmp_res == 0) {
+					int64_t *const dst = ((int64_t *)info) + g_mem_opts[pos].offset;
+					*dst = atoll(start + g_mem_opts[pos].str_len) * 1024;
+					if (++found == ARRAY_SIZE(g_mem_opts))
+						return true;
+					break;
+				} else
+					pos = (2 * pos) + (1 + !!(cmp_res < 0));
+			} while (pos < ARRAY_SIZE(g_mem_opts));
+			start = endl + 1;
+		}
+		offset = (unsigned)(buffer + buf_len - start);
+		memmove(buffer, start, offset);
 	}
-_exit:
-	fclose(memFile);
 	return (found == ARRAY_SIZE(g_mem_opts));
 }
 
@@ -110,7 +121,7 @@ static void cmd_memory_recache(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
 
 	struct memory_info_t info = {0};
-	if (cmd_memory_file(&info)) {
+	if (likely(cmd_memory_file(&info, data->fd))) {
 		int res;
 		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
