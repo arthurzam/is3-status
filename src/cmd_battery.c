@@ -37,25 +37,6 @@ struct cmd_battery_data {
 	char cached_output[256];
 };
 
-struct battery_info_t {
-	int status;
-
-	int remainingW;
-	int remainingAh; // temprorary and converted to watt
-	int present_rate;
-	int voltage;
-
-	int full_design_capacity;
-	int full_design_design;
-} __attribute__ ((aligned (sizeof(int))));
-
-enum {
-	BAT_STS_MISSING = 0,
-	BAT_STS_DISCHARGIUNG = 1,
-	BAT_STS_CHARGIUNG = 2,
-	BAT_STS_FULL = 3,
-};
-
 static bool cmd_battery_init(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
@@ -80,6 +61,25 @@ static void cmd_battery_destroy(struct cmd_data_base *_data) {
 	free(data->format_full);
 	free(data->path);
 }
+
+struct battery_info_t {
+	int status;
+
+	int remainingW;
+	int remainingAh; // temprorary and converted to watt
+	int present_rate;
+	int voltage;
+
+	int full_design_capacity;
+	int full_design_design;
+} __attribute__ ((aligned (sizeof(int))));
+
+enum {
+	BAT_STS_MISSING = 0,
+	BAT_STS_DISCHARGIUNG = 1,
+	BAT_STS_CHARGIUNG = 2,
+	BAT_STS_FULL = 3,
+};
 
 static bool cmd_battery_parse_file(const char *path, struct battery_info_t *info) {
 	enum {
@@ -164,16 +164,9 @@ static void cmd_battery_recache(struct cmd_data_base *_data) {
 	{
 		if (cmd_battery_parse_file(data->path, &info)) {
 			full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
-			if (info.remainingAh != -1 && info.remainingW == -1) {
-				if (info.present_rate > 0 && info.voltage != -1) {
-					info.present_rate = (int)((float)info.voltage * (float)info.present_rate / 1000000);
-					info.remainingW = (int)((float)info.voltage * (float)info.remainingAh / 1000000);
-					full_design = (int)((float)info.voltage * (float)full_design / 1000000);
-				} else
-					info.remainingW = info.remainingAh;
-			}
-
-			if (full_design == -1 || info.remainingW == -1)
+			if (info.remainingW < 0)
+				info.remainingW = info.remainingAh;
+			if (full_design <= 0 || info.remainingW < 0)
 				info.status = BAT_STS_MISSING;
 		} else
 			info.status = BAT_STS_MISSING;
@@ -187,7 +180,7 @@ static void cmd_battery_recache(struct cmd_data_base *_data) {
 	if (info.present_rate > 0) {
 		const int val = (info.status == BAT_STS_CHARGIUNG ? full_design - info.remainingW :
 						 info.status == BAT_STS_DISCHARGIUNG ? info.remainingW : 0);
-		remaining_time = val * 3600 / info.present_rate;
+		remaining_time = val * 60  / info.present_rate;
 	}
 
 	if (info.status == BAT_STS_FULL)
