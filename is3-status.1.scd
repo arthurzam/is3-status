@@ -167,10 +167,8 @@ off, the field's color will be *degraded*.
 ## MODULE: cpu_temperature
 The module outputs the current CPU temperature.
 
-	*path = *_[str]_: the path to the thermal Linux directory. This directory
-	must have a file with *temp* name whose content is the current temperature
-	in milli Celsius degrees. The default value is:
-	*/sys/class/thermal/thermal_zone0/*.
+	*device = *_[str]_: name of thermal device to query, which can be found by
+	checking the */sys/devices/virtual/thermal/* directory.
 
 	*format = *_[str]_: the output format. Aborts if unset. Possible
 	placeholders are: *\%c* for Celsius degrees and *\%f* for Fahrenheit

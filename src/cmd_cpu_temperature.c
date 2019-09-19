@@ -19,6 +19,7 @@
 #include "vprint.h"
 
 #include <string.h>
+#include <alloca.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -27,8 +28,9 @@
 struct cmd_cpu_temperature_data {
 	struct cmd_data_base base;
 	char *format;
-	char *path;
+	char *device;
 	long high_threshold;
+	int thermal_dir_fd;
 	char cached_output[128];
 };
 
@@ -37,22 +39,27 @@ static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 
 	if (!data->format)
 		return false;
-
-	if (data->path) {
-		const size_t len = strlen(data->path);
-		data->path = realloc(data->path, len + 7);
-		memcpy(data->path + len, "/temp", 6);
-	} else
-		data->path = strdup("/sys/class/thermal/thermal_zone0/temp");
-
+	if (!data->device)
+		return false;
 	data->base.cached_fulltext = data->cached_output;
-	return access(data->path, R_OK) == 0;
+
+#define THERMAL_PATH "/sys/devices/virtual/thermal/"
+	const size_t device_len = strlen(data->device);
+	char *path = alloca(strlen(THERMAL_PATH) + device_len + 1);
+	memcpy(path, THERMAL_PATH, strlen(THERMAL_PATH));
+	memcpy(path + strlen(THERMAL_PATH), data->device, device_len + 1);
+	free(data->device);
+	data->device = NULL;
+#undef THERMAL_PATH
+
+	data->thermal_dir_fd = open(path, O_PATH | O_DIRECTORY);
+	return data->thermal_dir_fd >= 0;
 }
 
 static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 	free(data->format);
-	free(data->path);
+	close(data->thermal_dir_fd);
 }
 
 // generaterd using command ./scripts/gen-format.py cf
@@ -63,7 +70,7 @@ static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 
 	int curr_value = -1;
 	{
-		int fd = open(data->path, O_RDONLY);
+		int fd = openat(data->thermal_dir_fd, "temp", O_RDONLY);
 		if (likely(fd >= 0)) {
 			char buf[64];
 			ssize_t len = read(fd, buf, sizeof(buf) - 1);
@@ -95,10 +102,10 @@ static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 
 #define CPU_TEMP_OPTIONS(F) \
 	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_cpu_temperature_data, base.align)), \
+	F("device", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, device)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, format)), \
 	F("high_threshold", OPT_TYPE_LONG, offsetof(struct cmd_cpu_temperature_data, high_threshold)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_cpu_temperature_data, base.interval)), \
-	F("path", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, path))
 
 CMD_OPTS_GEN_STRUCTS(cmd_cpu_temperature, CPU_TEMP_OPTIONS)
 
