@@ -149,7 +149,6 @@ static bool cmd_x11_language_cevent(struct cmd_data_base *_data, int event) {
 }
 
 #define X11_LANG_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_x11_language_data, base.align)), \
 	F("display", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, display)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_x11_language_data, base.interval)), \
 	F("language1", OPT_TYPE_STR, offsetof(struct cmd_x11_language_data, lan1_def)), \

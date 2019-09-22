@@ -72,7 +72,6 @@ static void cmd_date_recache(struct cmd_data_base *_data) {
 }
 
 #define DATE_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_date_data, base.align)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_date_data, format)), \
 	F("timezone", OPT_TYPE_STR, offsetof(struct cmd_date_data, timezone))
 

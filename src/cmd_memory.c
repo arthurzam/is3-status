@@ -151,7 +151,6 @@ static void cmd_memory_recache(struct cmd_data_base *_data) {
 }
 
 #define MEMORY_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_memory_data, base.align)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_memory_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_memory_data, base.interval)), \
 	F("threshold_critical", OPT_TYPE_BYTE_THRESHOLD, offsetof(struct cmd_memory_data, threshold_critical)), \

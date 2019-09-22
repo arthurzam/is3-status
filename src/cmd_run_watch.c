@@ -70,7 +70,6 @@ static void cmd_run_watch_recache(struct cmd_data_base *_data) {
 }
 
 #define RUN_WATCH_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_run_watch_data, base.align)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_run_watch_data, base.interval)), \
 	F("path", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, path)), \
 	F("text_down", OPT_TYPE_STR, offsetof(struct cmd_run_watch_data, text_down)), \

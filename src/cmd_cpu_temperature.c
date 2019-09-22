@@ -101,7 +101,6 @@ static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 }
 
 #define CPU_TEMP_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_cpu_temperature_data, base.align)), \
 	F("device", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, device)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_cpu_temperature_data, format)), \
 	F("high_threshold", OPT_TYPE_LONG, offsetof(struct cmd_cpu_temperature_data, high_threshold)), \

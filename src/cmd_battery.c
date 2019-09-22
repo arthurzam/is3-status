@@ -229,7 +229,6 @@ _Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_ba
 }
 
 #define BAT_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_battery_data, base.align)), \
 	F("format_charging", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_charging)), \
 	F("format_discharging", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_discharging)), \
 	F("format_full", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_full)), \

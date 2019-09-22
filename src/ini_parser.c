@@ -101,16 +101,6 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 			}
 			memcpy(dst, value, 8);
 			break;
-		} case OPT_TYPE_ALIGN: {
-			const char *align = NULL;
-			if (0 == memcmp(value, "left", 5))
-				align = "left";
-			else if (0 == memcmp(value, "right", 6))
-				align = "right";
-			else if (0 == memcmp(value, "center", 7))
-				align = "center";
-			*((const char **)dst) = align;
-			break;
 		} case OPT_TYPE_BYTE_THRESHOLD: {
 			*((long *)dst) = parse_human_bytes(value);
 			break;
@@ -122,7 +112,6 @@ static bool parse_assignment(void *cmd_data, const struct cmd_opts *cmd_opts, ch
 
 
 #define GENERAL_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct general_settings_t, align)), \
 	F("color_bad", OPT_TYPE_COLOR, offsetof(struct general_settings_t, color_bad)), \
 	F("color_degraded", OPT_TYPE_COLOR, offsetof(struct general_settings_t, color_degraded)), \
 	F("color_good", OPT_TYPE_COLOR, offsetof(struct general_settings_t, color_good)), \
@@ -228,7 +217,6 @@ int test_cmd_array_correct(void) {
 			unsigned type;
 			unsigned offset;
 		} base_opts[] = {
-			{"align", OPT_TYPE_ALIGN, offsetof(struct cmd_data_base, align)},
 			{"interval", OPT_TYPE_LONG, offsetof(struct cmd_data_base, interval)},
 		};
 		for (size_t i = 0; i < ARRAY_SIZE(base_opts); ++i) {

@@ -183,7 +183,6 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
 }
 
 #define MPRIS_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_mpris_data, base.align)), \
 	F("format_paused", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_paused)), \
 	F("format_playing", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_playing)), \
 	F("format_stopped", OPT_TYPE_STR, offsetof(struct cmd_mpris_data, format_stopped)), \

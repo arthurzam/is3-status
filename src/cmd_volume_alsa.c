@@ -213,7 +213,6 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
 }
 
 #define VOLUME_ALSA_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_volume_alsa_data, base.align)), \
 	F("device", OPT_TYPE_STR, offsetof(struct cmd_volume_alsa_data, device)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_volume_alsa_data, format)), \
 	F("format_muted", OPT_TYPE_STR, offsetof(struct cmd_volume_alsa_data, format_muted)), \

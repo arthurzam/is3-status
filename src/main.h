@@ -23,7 +23,6 @@
 #include <stddef.h>
 
 extern struct general_settings_t {
-	const char *align;
 	long interval;
 	char color_bad[8];
 	char color_degraded[8];
@@ -34,17 +33,16 @@ enum cmd_option_type {
 	OPT_TYPE_LONG = 0, ///< regular long variable
 	OPT_TYPE_STR = 1, ///< malloced char *
 	OPT_TYPE_COLOR = 2, ///< color variable of type char[8]
-	OPT_TYPE_ALIGN = 3, ///< align variable of type const char*, which would point to the alignment
 	/**
 	  * should be a long variable, but with special parsing for suffix:
 	  *  if using % suffix, the long would be a negetive number;
 	  *  otherwise the suffix should be a byte suffix (ex. MB, GiB) and would be positive
 	  */
-	OPT_TYPE_BYTE_THRESHOLD = 4,
+	OPT_TYPE_BYTE_THRESHOLD = 3,
 };
 struct cmd_option {
-	uint16_t type:3;
-	uint16_t offset:13;
+	uint16_t type:2;
+	uint16_t offset:14;
 };
 _Static_assert(sizeof(struct cmd_option) == 2, "incorrect bit width in struct cmd_option");
 #define CMD_IMPL_OPTS_GEN_NAME(name, ...) name
@@ -65,7 +63,6 @@ struct cmd_opts {
 } __attribute__((packed));
 
 struct cmd_data_base {
-	const char *align;
 	long interval;
 	char *cached_fulltext;
 	char cached_color[8];
@@ -105,7 +102,7 @@ struct cmd {
 #define CMD_COLOR_SET(data, color) memcpy((data)->base.cached_color, (color), 8)
 #define CMD_COLOR_CLEAN(data) (data)->base.cached_color[0] = '\0'
 
-#define X_STRLEN(str) ((sizeof(str)/sizeof(str[0]))-sizeof(str[0]))
+#define X_STRLEN(str) ((sizeof(str)/sizeof(*(str)))-sizeof(*(str)))
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 
 _Static_assert(sizeof(char) == 1, "If it isn't of size 1 byte, a lot of code is incorrect!");

@@ -81,7 +81,6 @@ static void cmd_systemd_watch_recache(struct cmd_data_base *_data) {
 }
 
 #define SYSTEMD_WATCH_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_systemd_watch_data, base.align)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_systemd_watch_data, base.interval)), \
 	F("service", OPT_TYPE_STR, offsetof(struct cmd_systemd_watch_data, service_name)), \
 	F("use_user_bus", OPT_TYPE_LONG, offsetof(struct cmd_systemd_watch_data, use_user_bus))

@@ -103,7 +103,6 @@ static void cmd_eth_recache(struct cmd_data_base *_data) {
 }
 
 #define ETH_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_eth_data, base.align)), \
 	F("format_down", OPT_TYPE_STR, offsetof(struct cmd_eth_data, format_down)), \
 	F("format_up", OPT_TYPE_STR, offsetof(struct cmd_eth_data, format_up)), \
 	F("interface", OPT_TYPE_STR, offsetof(struct cmd_eth_data, interface))

@@ -85,7 +85,6 @@ static void cmd_disk_usage_recache(struct cmd_data_base *_data) {
 }
 
 #define DISK_USAGE_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_disk_usage_data, base.align)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_disk_usage_data, base.interval)), \
 	F("path", OPT_TYPE_STR, offsetof(struct cmd_disk_usage_data, vfs_path)), \

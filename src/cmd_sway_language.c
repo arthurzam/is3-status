@@ -196,7 +196,6 @@ static void cmd_sway_language_recache(struct cmd_data_base *_data) {
 }
 
 #define SWAY_LANG_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_sway_language_data, base.align)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_sway_language_data, base.interval)), \
 	F("keyboard-name", OPT_TYPE_STR, offsetof(struct cmd_sway_language_data, keyboard_name))
 

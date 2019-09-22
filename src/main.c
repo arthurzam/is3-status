@@ -142,8 +142,6 @@ int main(int argc, char *argv[])
 			return 1;
 		}
 		run->vtable->func_recache(run->data);
-		if (!run->data->align)
-			run->data->align = g_general_settings.align;
 		if (run->data->interval >= 0 && run->data->interval < g_general_settings.interval)
 			run->data->interval = g_general_settings.interval;
 	}
@@ -173,8 +171,6 @@ int main(int argc, char *argv[])
 			yajl_gen_map_open(json_gen);
 			JSON_OUTPUT("name", run->vtable->name);
 			JSON_OUTPUT("markup", "none");
-			if (run->data->align)
-				JSON_OUTPUT("align", run->data->align);
 			if (run->instance)
 				JSON_OUTPUT("instance", run->instance);
 			if (run->data->cached_fulltext)

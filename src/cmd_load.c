@@ -73,7 +73,6 @@ static void cmd_load_recache(struct cmd_data_base *_data) {
 }
 
 #define LOAD_OPTIONS(F) \
-	F("align", OPT_TYPE_ALIGN, offsetof(struct cmd_load_data, base.align)), \
 	F("format", OPT_TYPE_STR, offsetof(struct cmd_load_data, format)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_load_data, base.interval)), \
 
