@@ -25,7 +25,6 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/uio.h>
 
 #include <yajl/yajl_tree.h>
 
@@ -44,62 +43,37 @@ struct msg_header_t {
 } __attribute__((packed));
 _Static_assert(sizeof(struct msg_header_t) == 14, "incorrect size for struct msg_header_t");
 
-static char *cmd_sway_language_get_socketpath(void) {
+static bool cmd_sway_language_get_socketpath(struct sockaddr_un *addr) {
 	const char *sock = getenv("SWAYSOCK");
-	if (sock)
-		return strdup(sock);
+	if (sock) {
+		strncpy(addr->sun_path, sock, sizeof(addr->sun_path) - 1);
+		addr->sun_path[sizeof(addr->sun_path) - 1] = '\0';
+		return true;
+	}
 
 	FILE *fp = popen("sway --get-socketpath 2>/dev/null", "r");
 	if (fp) {
-		char *line = NULL;
-		size_t line_size = 0;
-		ssize_t nret = getline(&line, &line_size, fp);
+		size_t nret = fread(addr->sun_path, 1, sizeof(addr->sun_path) - 1, fp);
 		pclose(fp);
+		addr->sun_path[nret] = '\0';
 		if (nret > 0) {
-			if (line[nret - 1] == '\n')
-				line[nret - 1] = '\0';
-			return line;
+			if (addr->sun_path[nret - 1] == '\n')
+				addr->sun_path[nret - 1] = '\0';
+			return true;
 		}
-		free(line);
 	}
-	return NULL;
-}
-
-static int cmd_sway_language_open_socket(void) {
-	int socketfd;
-	char *socket_path;
-
-	if ((socket_path = cmd_sway_language_get_socketpath()) == NULL) {
-		fputs("sway-language: Unable to find Sway socket\n", stderr);
-		return -1;
-	}
-	if ((socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		fputs("sway-language: Unable to open Unix socket\n", stderr);
-		return -1;
-	}
-	struct sockaddr_un addr;
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, socket_path, sizeof(addr.sun_path) - 1);
-	addr.sun_path[sizeof(addr.sun_path) - 1] = 0;
-	if (connect(socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
-		fprintf(stderr, "sway-language: Unable to connect to %s\n", socket_path);
-		close(socketfd);
-		free(socket_path);
-		return -1;
-	}
-	free(socket_path);
-	return socketfd;
+	return false;
 }
 
 static void cmd_sway_language_query(struct cmd_sway_language_data *data) {
 	/* send msg on IPC */
 	{
-		static const struct msg_header_t msg = {
+		static const struct msg_header_t sway_lang_msg = {
 			.magic = {'i', '3', '-', 'i', 'p', 'c'},
 			.size = 0,
 			.type = 100
 		};
-		if (0 > write(data->socketfd, &msg, sizeof(msg))) {
+		if (unlikely(0 > write(data->socketfd, &sway_lang_msg, sizeof(sway_lang_msg)))) {
 			fprintf(stderr, "sway-language: unable to send request, error %s\n", strerror(errno));
 			return;
 		}
@@ -110,7 +84,7 @@ static void cmd_sway_language_query(struct cmd_sway_language_data *data) {
 		struct msg_header_t recv_buf;
 		size_t total = 0;
 		do {
-			ssize_t received = recv(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total, 0);
+			ssize_t received = read(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return;
@@ -124,7 +98,7 @@ static void cmd_sway_language_query(struct cmd_sway_language_data *data) {
 		}
 		total = 0;
 		do {
-			ssize_t received = recv(data->socketfd, data->buffer + total, recv_buf.size - total, 0);
+			ssize_t received = read(data->socketfd, data->buffer + total, recv_buf.size - total);
 			if (received <= 0) {
 				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
 				return;
@@ -176,8 +150,21 @@ static bool cmd_sway_language_init(struct cmd_data_base *_data) {
 
 	if (!data->keyboard_name)
 		return false;
-	if (-1 == (data->socketfd = cmd_sway_language_open_socket()))
+
+	if ((data->socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
+		fputs("sway-language: Unable to open Unix socket\n", stderr);
 		return false;
+	}
+	struct sockaddr_un addr;
+	addr.sun_family = AF_UNIX;
+	if (!cmd_sway_language_get_socketpath(&addr)) {
+		fputs("sway-language: Unable to find Sway socket\n", stderr);
+		return false;
+	}
+	if (connect(data->socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
+		fprintf(stderr, "sway-language: Unable to connect to %s\n", addr.sun_path);
+		return false;
+	}
 
 	return true;
 }
