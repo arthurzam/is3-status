@@ -27,6 +27,7 @@ struct run_instance {
 	const struct cmd *vtable;
 	struct cmd_data_base *data;
 	char *instance;
+#define MAX_INSTANCE_LEN 64
 };
 
 struct runs_list {

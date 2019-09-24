@@ -166,8 +166,16 @@ struct runs_list ini_parse(FILE *ini) {
 			runs = realloc(runs, res_size * sizeof(struct run_instance));
 			curr = runs + (res_size - 1);
 			curr->vtable = cmd;
-			curr->instance = (space == ender ? NULL : strdup(space));
 			curr->data = calloc(cmd->data_size, 1);
+			if (space != ender) {
+				size_t len = strlen(space);
+				if (len > MAX_INSTANCE_LEN - 1)
+					len = MAX_INSTANCE_LEN - 1;
+				curr->instance = malloc(len + 1);
+				memcpy(curr->instance, space, len);
+				curr->instance[len] = '\0';
+			} else
+				curr->instance = NULL;
 		} else {
 			void *data = curr ? (void *)curr->data : (void *)&g_general_settings;
 			const struct cmd_opts *opts = curr ? &curr->vtable->opts : &general_opts;

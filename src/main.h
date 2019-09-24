@@ -97,7 +97,7 @@ struct cmd {
 	const struct cmd_opts opts;
 	const unsigned data_size; ///< size of module's data, which is allocated and set before call to func_init
 } __attribute__ ((aligned (CMD_USE_ALIGNMENT)));
-#define DECLARE_CMD(name) static const struct cmd name __attribute((used, section("cmd_array"), aligned(CMD_USE_ALIGNMENT)))
+#define DECLARE_CMD(name) static const struct cmd name __attribute__((used, section("cmd_array"), aligned(CMD_USE_ALIGNMENT)))
 
 #define CMD_COLOR_SET(data, color) memcpy((data)->base.cached_color, (color), 8)
 #define CMD_COLOR_CLEAN(data) (data)->base.cached_color[0] = '\0'

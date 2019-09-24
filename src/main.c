@@ -20,20 +20,12 @@
 
 #include <unistd.h>
 #include <errno.h>
-#include <sys/uio.h>
 
-#include <yajl_version.h>
 #include <yajl_tree.h>
-#include <yajl_gen.h>
 
 #include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
-
-__attribute__((always_inline)) inline void json_output(yajl_gen json_gen, const char *key, size_t key_size, const char *value, size_t value_size) {
-	yajl_gen_string(json_gen, (const unsigned char *)key, key_size);
-	yajl_gen_string(json_gen, (const unsigned char *)value, value_size);
-}
 
 static FILE *open_config(const char *defPath) {
 	if (defPath && access(defPath, R_OK) == 0)
@@ -147,49 +139,69 @@ int main(int argc, char *argv[])
 	}
 
 #define WRITE_LEN(str) write(STDOUT_FILENO, str, strlen(str))
-	if (unlikely(0 > WRITE_LEN("{\"version\":1, \"click_events\": true}\n[\n"))) {
+	if (unlikely(0 > WRITE_LEN("{\"version\":1, \"click_events\": true}\n[\n[]\n"))) {
 		fprintf(stderr, "unable to send start status bar\n");
 		return 1;
 	}
 #undef WRITE_LEN
 
-	yajl_gen json_gen = yajl_gen_alloc(NULL);
-	yajl_gen_array_open(json_gen);
-	yajl_gen_clear(json_gen);
-
 	fdpoll_add(STDIN_FILENO, handle_click_event, &runs);
-	struct iovec iov[2] = {	{NULL, 0}, {"\n", 1} };
 
+	char output_buffer[4096] = ",[";
 	int fdpoll_res;
 	for (unsigned eventNum = 0; (fdpoll_res = fdpoll_run()) >= 0; ++eventNum) {
-		yajl_gen_array_open(json_gen);
+		char *ptr = output_buffer + 2;
 		FOREACH_RUN(run, &runs) {
 			if ((fdpoll_res > 0) || (run->data->interval > 0 && eventNum % run->data->interval == 0))
 				run->vtable->func_recache(run->data);
 
-#define JSON_OUTPUT(key,value) json_output(json_gen, (key), strlen(key), value, strlen(value))
-			yajl_gen_map_open(json_gen);
-			JSON_OUTPUT("name", run->vtable->name);
-			JSON_OUTPUT("markup", "none");
-			if (run->instance)
-				JSON_OUTPUT("instance", run->instance);
-			if (run->data->cached_fulltext)
-				JSON_OUTPUT("full_text", run->data->cached_fulltext);
-			if (run->data->cached_color[0])
-				json_output(json_gen, "color", 5, run->data->cached_color, 7);
-			yajl_gen_map_close(json_gen);
-#undef JSON_OUTPUT
-		}
-		yajl_gen_array_close(json_gen);
+			if (run != runs.runs_begin) // divider before all except first
+				*(ptr++) = ',';
+			size_t len;
+#define OUTPUT_CONST_STR(str) memcpy(ptr, str, strlen(str)); ptr += strlen(str)
+			OUTPUT_CONST_STR("{\"name\":\"");
+			len = strlen(run->vtable->name);
+			memcpy(ptr, run->vtable->name, len);
+			ptr += len;
 
-		yajl_gen_get_buf(json_gen, (const unsigned char **)(void *)&iov[0].iov_base, &iov[0].iov_len);
-		if (unlikely(0 > writev(STDOUT_FILENO, iov, 2))) {
+			OUTPUT_CONST_STR("\",\"markup\":\"none");
+
+			if (run->instance) {
+				OUTPUT_CONST_STR("\",\"instance\":\"");
+				len = strlen(run->instance);
+				memcpy(ptr, run->instance, len);
+				ptr += len;
+			}
+
+			if (likely(run->data->cached_fulltext)) {
+				len = strlen(run->data->cached_fulltext);
+				if (likely(output_buffer + (sizeof(output_buffer) - 256) >  ptr + len)) {
+					OUTPUT_CONST_STR("\",\"full_text\":\"");
+					memcpy(ptr, run->data->cached_fulltext, len);
+					ptr += len;
+				} else {
+					*(ptr++) = '}';
+					break;
+				}
+			}
+
+			if (run->data->cached_color[0]) {
+				OUTPUT_CONST_STR("\",\"color\":\"");
+				memcpy(ptr, run->data->cached_color, 7);
+				ptr += 7;
+			}
+			*(ptr++) = '\"';
+			*(ptr++) = '}';
+#undef OUTPUT_CONST_STR
+		}
+		*(ptr++) = ']';
+		*(ptr++) = '\n';
+
+		if (unlikely(0 > write(STDOUT_FILENO, output_buffer, (size_t)(ptr - output_buffer)))) {
 			fprintf(stderr, "main: unable to send output, error %s\n", strerror(errno));
 		}
-		yajl_gen_clear(json_gen);
 	}
 
-	yajl_gen_free(json_gen);
 	free_all_run_instances(&runs);
 	return 0;
 }
