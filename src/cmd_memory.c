@@ -92,8 +92,8 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 	lseek(fd, 0, SEEK_SET);
 	while (0 < (buf_len = offset + read(fd, buffer + offset, sizeof(buffer) - 1 - offset))) {
 		buffer[buf_len] = '\0';
-		char *endl, *start = buffer;
-		while (NULL != (endl = strchr(start, '\n'))) {
+		char *start = buffer;
+		while (true) {
 			unsigned pos = 0;
 			do {
 				const int cmp_res = memcmp(g_mem_opts[pos].str, start, g_mem_opts[pos].str_len);
@@ -106,7 +106,9 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 				} else
 					pos = (2 * pos) + (1 + !!(cmp_res < 0));
 			} while (pos < ARRAY_SIZE(g_mem_opts));
-			start = endl + 1;
+			if (!(start = strchr(start, '\n')))
+				break;
+			start++;
 		}
 		offset = (unsigned)(buffer + buf_len - start);
 		memmove(buffer, start, offset);
@@ -125,7 +127,7 @@ static void cmd_memory_recache(struct cmd_data_base *_data) {
 		int res;
 		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) >= 0) {
-			int64_t value = 0;
+			int64_t value;
 			switch (res | 0x20) { // convert to lower case
 				case 'a': value = info.ram_available; break;
 				case 'f': value = info.ram_free; break;
