@@ -1,4 +1,5 @@
 option('alsa', type: 'feature', value: 'auto', description: 'Enable accessing ALSA volume')
+option('backlight', type: 'feature', value: 'auto', description: 'Enable Backlight module')
 option('battery', type: 'feature', value: 'auto', description: 'Enable Battery module')
 option('cpu-temperature', type: 'feature', value: 'auto', description: 'Enable CPU temperature module')
 option('disk-usage', type: 'feature', value: 'auto', description: 'Enable disk usage module')
