@@ -17,6 +17,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <unistd.h>
 #include <errno.h>
@@ -26,40 +27,6 @@
 #include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
-
-static FILE *open_config(const char *defPath) {
-	if (defPath && access(defPath, R_OK) == 0)
-		return fopen(defPath, "r");
-	const char *path = getenv("IS3_STATUS_CONFIG");
-	if (path && access(path, R_OK) == 0)
-		return fopen(path, "r");
-
-	char buf[FILENAME_MAX + 1];
-	buf[0] = buf[FILENAME_MAX] = '\0';
-
-	if ((path = getenv("XDG_CONFIG_HOME")) && path[0] != '\0') {
-		strncpy(buf, path, FILENAME_MAX);
-		strncat(buf, "/is3-status.conf", FILENAME_MAX);
-		if (access(buf, R_OK) == 0)
-			return fopen(buf, "r");
-	}
-	if ((path = getenv("HOME"))) {
-		strncpy(buf, path, FILENAME_MAX);
-		const size_t len = strlen(buf);
-
-		strncpy(buf + len, "/.config/is3-status.conf", FILENAME_MAX - len);
-		if (access(buf, R_OK) == 0)
-			return fopen(buf, "r");
-
-		strncpy(buf + len, "/.is3-status.conf", FILENAME_MAX - len);
-		if (access(buf, R_OK) == 0)
-			return fopen(buf, "r");
-	}
-	if (access("/etc/is3-status.conf", R_OK) == 0)
-		return fopen("/etc/is3-status.conf", "r");
-
-	return NULL;
-}
 
 static bool handle_click_event(void *arg) {
 	struct runs_list *runs = arg;
@@ -114,14 +81,8 @@ int main(int argc, char *argv[])
 	if (!test_cmd_array_correct())
 		return 1;
 #endif
-	FILE *ini = open_config(argc > 1 ? argv[1] : NULL);
-	if (!ini) {
-		fprintf(stderr, "Couldn't find config file\n");
-		return 1;
-	}
-	struct runs_list runs = ini_parse(ini);
-	fclose(ini);
-	if (runs.runs_begin == NULL || runs.runs_end == runs.runs_begin) {
+	struct runs_list runs = ini_parse(argc > 1 ? argv[1] : NULL);
+	if (runs.runs_begin == NULL) {
 		fprintf(stderr, "Couldn't load config file\n");
 		return 1;
 	}

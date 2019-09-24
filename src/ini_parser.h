@@ -18,8 +18,6 @@
 #ifndef INI_PARSER_H
 #define INI_PARSER_H
 
-#include <stdio.h>
-
 struct cmd;
 struct cmd_data_base;
 
@@ -36,7 +34,7 @@ struct runs_list {
 };
 #define FOREACH_RUN(iter,runs) for (struct run_instance *(iter) = (runs)->runs_begin; (iter) != (runs)->runs_end; (iter)++)
 
-struct runs_list ini_parse(FILE *ini);
+struct runs_list ini_parse(const char *argv_path) __attribute__ ((cold));
 void free_all_run_instances(struct runs_list *runs);
 
 #ifdef TESTS

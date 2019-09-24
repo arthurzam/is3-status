@@ -20,8 +20,45 @@
 #include "vprint.h"
 
 #include <ctype.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include <unistd.h>
+
+static FILE *open_config(const char *defPath) {
+	if (defPath && access(defPath, R_OK) == 0)
+		return fopen(defPath, "r");
+	const char *path = getenv("IS3_STATUS_CONFIG");
+	if (path && access(path, R_OK) == 0)
+		return fopen(path, "r");
+
+	char buf[FILENAME_MAX + 1];
+	buf[0] = buf[FILENAME_MAX] = '\0';
+
+	if ((path = getenv("XDG_CONFIG_HOME")) && path[0] != '\0') {
+		strncpy(buf, path, FILENAME_MAX);
+		strncat(buf, "/is3-status.conf", FILENAME_MAX);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+	}
+	if ((path = getenv("HOME"))) {
+		strncpy(buf, path, FILENAME_MAX);
+		const size_t len = strlen(buf);
+
+		strncpy(buf + len, "/.config/is3-status.conf", FILENAME_MAX - len);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+
+		strncpy(buf + len, "/.is3-status.conf", FILENAME_MAX - len);
+		if (access(buf, R_OK) == 0)
+			return fopen(buf, "r");
+	}
+	if (access("/etc/is3-status.conf", R_OK) == 0)
+		return fopen("/etc/is3-status.conf", "r");
+
+	return NULL;
+}
 
 static char *strip_str(char *begin, char *end) {
 	for (; isspace(*begin) && begin < end; ++begin);
@@ -125,13 +162,18 @@ struct general_settings_t g_general_settings = {
 	.color_good = "#00FF00"
 };
 
-struct runs_list ini_parse(FILE *ini) {
+struct runs_list ini_parse(const char *argv_path) {
 	struct run_instance *runs = NULL, *curr = NULL;
 	unsigned res_size = 0;
 	char buffer[1024], *ptr;
 	buffer[sizeof(buffer) - 1] = '\0';
+	FILE *ini_file = open_config(argv_path);
+	if (!ini_file) {
+		fprintf(stderr, "Couldn't find config file\n");
+		return (struct runs_list){NULL, NULL};
+	}
 
-	while (fgets(buffer, sizeof(buffer) - 1, ini)) {
+	while (fgets(buffer, sizeof(buffer) - 1, ini_file)) {
 		ptr = buffer;
 
 		for (; isspace(*ptr); ++ptr);
@@ -183,9 +225,13 @@ struct runs_list ini_parse(FILE *ini) {
 				goto _error;
 		}
 	}
+	if (res_size == 0)
+		goto _error;
+	fclose(ini_file);
 	return (struct runs_list){runs, runs + res_size};
 
 _error:
+	fclose(ini_file);
 	free(runs);
 	return (struct runs_list){NULL, NULL};
 }
