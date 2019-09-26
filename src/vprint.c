@@ -90,23 +90,19 @@ void vprint_time(struct vprint *ctx, int value) {
 
 #define DISK_PREFIX_MAX 4
 static const struct disk_prefix_t {
-	const char suffix[4];
-	uint64_t base;
-} g_disk_suffixs[2][DISK_PREFIX_MAX] = {
+	const char suffix[DISK_PREFIX_MAX][4];
+	uint64_t base[DISK_PREFIX_MAX];
+} g_disk_suffixs[2] = {
 	{ // binary
-		{"TB", 0x10000000000ULL}, // 1024^4
-		{"GB", 0x40000000ULL}, // 1024^3
-		{"MB", 0x100000ULL}, // 1024^2
-		{"KB", 0x400ULL}, // 1024^1
-	},
-	{ // decimal
-		{"TiB", 1000000000000ULL}, // 1000^4
-		{"GiB", 1000000000ULL}, // 1000^3
-		{"MiB", 1000000ULL}, // 1000^2
-		{"KiB", 1000ULL}, // 1000^1
-	},
+		{      "TB"      ,      "GB"    ,     "MB"   ,  "KB"},
+		{0x10000000000ULL, 0x40000000ULL, 0x100000ULL, 0x400ULL}
+		//    1024^4     ,    1024^3    ,   1024^2   , 1024^1
+	}, { // decimal
+		{      "TiB"     ,      "GiB"   ,     "MiB" ,  "KiB"},
+		{1000000000000ULL, 1000000000ULL, 1000000ULL, 1000ULL}
+		//    1000^4     ,    1000^3    ,   1000^2   , 1000^1
+	}
 };
-static const struct disk_prefix_t g_disk_prefix_base = {"", 1};
 
 void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, uint64_t val_bsize, bool use_decimal) {
 	uint64_t base;
@@ -117,15 +113,15 @@ void vprint_human_bytes(struct vprint *ctx, uint64_t value, uint64_t pct_base, u
 		suffix = "%";
 	} else {
 		value *= val_bsize;
-		const struct disk_prefix_t *temp = &g_disk_prefix_base;
+		base = 1;
+		suffix = "";
 		for (unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
-			if (g_disk_suffixs[use_decimal][i].base < value) {
-				temp = g_disk_suffixs[use_decimal] + i;
+			if (g_disk_suffixs[use_decimal].base[i] < value) {
+				base = g_disk_suffixs[use_decimal].base[i];
+				suffix = g_disk_suffixs[use_decimal].suffix[i];
 				break;
 			}
 		}
-		base = temp->base;
-		suffix = temp->suffix;
 	}
 	vprint_dtoa(ctx, (double)value / base);
 	vprint_strcat(ctx, suffix);
@@ -141,8 +137,8 @@ long parse_human_bytes(const char *str) {
 	} else {
 		for (unsigned v = 0; v < 2; ++v) {
 			for (unsigned i = 0; i < DISK_PREFIX_MAX; i++) {
-				if (0 == memcmp(g_disk_suffixs[v][i].suffix, last - (1 + v), 2 + v)) {
-					base = (long)g_disk_suffixs[v][i].base;
+				if (0 == memcmp(g_disk_suffixs[v].suffix[i], last - (1 + v), 2 + v)) {
+					base = (long)g_disk_suffixs[v].base[i];
 					goto _out;
 				}
 			}
