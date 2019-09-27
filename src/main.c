@@ -33,6 +33,9 @@ static bool handle_click_event(void *arg) {
 	char input[1024];
 	bool res = false;
 
+	if (feof(stdin))
+		return (void)fclose(stdin), false;
+
 	while (fgets(input, sizeof(input), stdin)) {
 		char* walker = input;
 		if (*walker == '[')

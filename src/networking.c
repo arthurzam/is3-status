@@ -63,7 +63,7 @@ unsigned net_add_if(const char *if_name) {
 
 	if (g_net_global.netlink_fd == 0) {
 		g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
-		if (g_net_global.netlink_fd < 0) {
+		if (unlikely(g_net_global.netlink_fd < 0)) {
 			fprintf(stderr, "netlink: socket failed: %s\n", strerror(errno));
 			return NET_ADD_IF_FAILED;
 		}
@@ -74,7 +74,7 @@ unsigned net_add_if(const char *if_name) {
 			.nl_pid = (uint32_t)getpid()
 		};
 
-		if (bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+		if (unlikely(bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)) {
 			fprintf(stderr, "netlink: bind failed: %s\n", strerror(errno));
 			return NET_ADD_IF_FAILED;
 		}
@@ -87,9 +87,9 @@ unsigned net_add_if(const char *if_name) {
 		struct ifreq ifr;
 		strncpy(ifr.ifr_name, curr->if_name, IFNAMSIZ - 1);
 
-		if (!ioctl(fd, SIOCGIFFLAGS, &ifr)) {
+		if (likely(!ioctl(fd, SIOCGIFFLAGS, &ifr))) {
 			curr->is_down = (char)((ifr.ifr_flags & (IFF_UP | IFF_RUNNING)) != (IFF_UP | IFF_RUNNING));
-			if (!curr->is_down && !ioctl(fd, SIOCGIFADDR, &ifr))
+			if (!curr->is_down && likely(!ioctl(fd, SIOCGIFADDR, &ifr)))
 				inet_ntop(AF_INET, &((struct sockaddr_in *)(void *)&ifr.ifr_addr)->sin_addr, curr->if_ip4, sizeof(curr->if_ip4));
 		}
 		close(fd);
