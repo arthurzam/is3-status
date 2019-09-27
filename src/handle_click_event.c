@@ -17,17 +17,18 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <yajl/yajl_parse.h>
-#include <yajl/yajl_gen.h>
 
 #include <unistd.h>
-#include <errno.h>
 
 #include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
+
+#if __GNUC__
+	#pragma GCC optimize ("-Os")
+#endif
 
 enum CURRENT_KEY {
 	CURRENT_KEY_UNSET = 0,
@@ -36,7 +37,6 @@ enum CURRENT_KEY {
 	CURRENT_KEY_BUTTON = 3, // "button"
 	CURRENT_KEY_MODIFIERS = 4, // "modifiers"
 };
-
 
 static struct {
 	struct runs_list *runs;
@@ -76,19 +76,19 @@ static int cevent_map_key(void *ctx, const unsigned char *str, size_t len) {
 	g_cevent_data.current_key = CURRENT_KEY_UNSET;
 	switch (len) {
 		case 4:
-			if(0 == memcmp(str, "name", 4))
+			if(likely(0 == memcmp(str, "name", 4)))
 				g_cevent_data.current_key = CURRENT_KEY_NAME;
 			break;
 		case 6:
-			if(0 == memcmp(str, "button", 6))
+			if(likely(0 == memcmp(str, "button", 6)))
 				g_cevent_data.current_key = CURRENT_KEY_BUTTON;
 			break;
 		case 8:
-			if(0 == memcmp(str, "instance", 8))
+			if(likely(0 == memcmp(str, "instance", 8)))
 				g_cevent_data.current_key = CURRENT_KEY_INSTANCE;
 			break;
 		case 9:
-			if(0 == memcmp(str, "modifiers", 9))
+			if(likely(0 == memcmp(str, "modifiers", 9)))
 				g_cevent_data.current_key = CURRENT_KEY_MODIFIERS;
 			break;
 	}
@@ -99,8 +99,8 @@ static int cevent_start_map(void *ctx) {
 	(void) ctx;
 	free(g_cevent_data.name);
 	free(g_cevent_data.instance);
-	g_cevent_data.name = 0;
-	g_cevent_data.instance = 0;
+	g_cevent_data.name = NULL;
+	g_cevent_data.instance = NULL;
 	g_cevent_data.button = __CEVENT_MOUSE_UNSET;
 	g_cevent_data.current_key = CURRENT_KEY_UNSET;
 	return true;
@@ -134,14 +134,14 @@ static const yajl_callbacks cevent_callbacks = {
 
 bool handle_click_event(void *arg) {
 	(void)arg;
-	if (feof(stdin))
-		return (void)fclose(stdin), false;
 
-	uint8_t input[1024];
-	size_t ret;
+	uint8_t input[2048];
 	g_cevent_data.force_update = false;
-	while (0 < (ret = fread(input, 1, sizeof(input), stdin)))
+	ssize_t ret = read(STDIN_FILENO, input, sizeof(input));
+	if (ret > 0)
 		yajl_parse(g_cevent_data.yajl_parse_handle, input, (size_t)ret);
+	else
+		close(STDIN_FILENO);
 	return g_cevent_data.force_update;
 }
 
