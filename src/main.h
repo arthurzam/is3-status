@@ -69,6 +69,7 @@ struct cmd_data_base {
 };
 
 enum click_event {
+	__CEVENT_MOUSE_UNSET = 0,
 	CEVENT_MOUSE_LEFT = 1,
 	CEVENT_MOUSE_MIDDLE = 2,
 	CEVENT_MOUSE_RIGHT = 3,

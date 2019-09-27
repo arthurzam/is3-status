@@ -22,61 +22,11 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <yajl_tree.h>
-
 #include "main.h"
 #include "ini_parser.h"
 #include "fdpoll.h"
 
-static bool handle_click_event(void *arg) {
-	struct runs_list *runs = arg;
-	char input[1024];
-	bool res = false;
-
-	if (feof(stdin))
-		return (void)fclose(stdin), false;
-
-	while (fgets(input, sizeof(input), stdin)) {
-		char* walker = input;
-		if (*walker == '[')
-			walker++;
-		if (*walker == '\0' || *walker == '\n')
-			continue;
-		if (*walker == ',')
-			walker++;
-
-		yajl_val node = yajl_tree_parse(walker, NULL, 0);
-		if (YAJL_IS_OBJECT(node)) {
-			const char *name = NULL, *instance = NULL;
-			int button = -1;
-
-			for (size_t i = 0; i < node->u.object.len; ++i) {
-				const char *key = node->u.object.keys[i];
-				if (0 == memcmp(key, "name", 5))
-					name = YAJL_GET_STRING(node->u.object.values[i]);
-				else if (0 == memcmp(key, "instance", 9))
-					instance = YAJL_GET_STRING(node->u.object.values[i]);
-				else if (0 == memcmp(key, "button", 7))
-					button = (int)YAJL_GET_INTEGER(node->u.object.values[i]);
-			}
-
-			if (name == NULL || button == -1) {
-				fprintf(stderr, "handle_cevent: bad click event object: %s\n", input);
-				continue;
-			}
-			FOREACH_RUN(run, runs) {
-				if ((0 == strcmp(run->vtable->name, name)) &&
-						(instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, instance))) {
-					if (run->vtable->func_cevent && run->vtable->func_cevent(run->data, button))
-						res = true;
-					break;
-				}
-			}
-		}
-		yajl_tree_free(node);
-	}
-	return res;
-}
+void init_cevent_handle(struct runs_list *runs);
 
 int main(int argc, char *argv[])
 {
@@ -109,7 +59,7 @@ int main(int argc, char *argv[])
 	}
 #undef WRITE_LEN
 
-	fdpoll_add(STDIN_FILENO, handle_click_event, &runs);
+	init_cevent_handle(&runs);
 
 	char output_buffer[4096] = ",[";
 	int fdpoll_res;

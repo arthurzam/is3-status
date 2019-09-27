@@ -10,7 +10,8 @@ sources = [
   'src/main.c',
   'src/networking.c',
   'src/vprint.c',
-  'src/fdpoll.c'
+  'src/fdpoll.c',
+  'src/handle_click_event.c'
 ]
 
 #ide:editable-filelist
