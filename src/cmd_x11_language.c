@@ -125,7 +125,8 @@ static void cmd_x11_language_recache(struct cmd_data_base *_data) {
 #undef BAT_POS_CHECK
 }
 
-static bool cmd_x11_language_cevent(struct cmd_data_base *_data, int event) {
+static bool cmd_x11_language_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+	(void) modifiers;
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
 	unsigned toogle_mask, check_mask;

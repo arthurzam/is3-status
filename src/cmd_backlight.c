@@ -112,7 +112,8 @@ static void cmd_backlight_recache(struct cmd_data_base *_data) {
 	cmd_backlight_update_text(data, cmd_backlight_read_value(data->backlight_fd));
 }
 
-static bool cmd_backlight_cevent(struct cmd_data_base *_data, int event) {
+static bool cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+	(void) modifiers;
 	struct cmd_backlight_data *data = (struct cmd_backlight_data *)_data;
 	if (data->supports_changing) {
 		long new_value;

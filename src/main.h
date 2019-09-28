@@ -76,12 +76,21 @@ enum click_event {
 	CEVENT_MOUSE_WHEEL_UP = 4,
 	CEVENT_MOUSE_WHEEL_DOWN = 5
 };
+enum click_event_modifiers {
+	CEVENT_MOD_SHIFT = (1 << 0),
+	CEVENT_MOD_CONTROL = (1 << 1),
+	CEVENT_MOD_MOD1 = (1 << 2),
+	CEVENT_MOD_MOD2 = (1 << 3),
+	CEVENT_MOD_MOD3 = (1 << 4),
+	CEVENT_MOD_MOD4 = (1 << 5),
+	CEVENT_MOD_MOD5 = (1 << 6),
+};
 
 #define CMD_USE_ALIGNMENT 8
 struct cmd {
 	const char *const name; ///< name of module
 	void(*func_recache)(struct cmd_data_base *data);
-	bool(*func_cevent)(struct cmd_data_base *data, int event);
+	bool(*func_cevent)(struct cmd_data_base *data, unsigned event, unsigned modifiers);
 	/**
 	 * @brief Initialize the instance
 	 *

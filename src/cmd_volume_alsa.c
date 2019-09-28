@@ -173,7 +173,8 @@ static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	}
 }
 
-static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, int event) {
+static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+	(void) modifiers;
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 	int res;
 	switch (event) {

@@ -46,6 +46,7 @@ static struct {
 	char *instance;
 	uint8_t button;
 	uint8_t current_key;
+	uint8_t modifiers;
 	bool force_update;
 } g_cevent_data;
 
@@ -62,6 +63,22 @@ static int cevent_string(void *ctx, const unsigned char *str, size_t len) {
 	switch (g_cevent_data.current_key) {
 		case CURRENT_KEY_NAME: dst = &g_cevent_data.name; break;
 		case CURRENT_KEY_INSTANCE: dst = &g_cevent_data.instance; break;
+		case CURRENT_KEY_MODIFIERS:
+			if(0 == memcmp(str, "Shift", 5))
+				g_cevent_data.modifiers |= CEVENT_MOD_SHIFT;
+			else if(0 == memcmp(str, "Control", 7))
+				g_cevent_data.modifiers |= CEVENT_MOD_CONTROL;
+			else if(0 == memcmp(str, "Mod1", 4))
+				g_cevent_data.modifiers |= CEVENT_MOD_MOD1;
+			else if(0 == memcmp(str, "Mod2", 4))
+				g_cevent_data.modifiers |= CEVENT_MOD_MOD2;
+			else if(0 == memcmp(str, "Mod3", 4))
+				g_cevent_data.modifiers |= CEVENT_MOD_MOD3;
+			else if(0 == memcmp(str, "Mod4", 4))
+				g_cevent_data.modifiers |= CEVENT_MOD_MOD4;
+			else if(0 == memcmp(str, "Mod5", 4))
+				g_cevent_data.modifiers |= CEVENT_MOD_MOD5;
+			return true;
 		default: return true;
 	}
 	free(*dst);
@@ -88,8 +105,10 @@ static int cevent_map_key(void *ctx, const unsigned char *str, size_t len) {
 				g_cevent_data.current_key = CURRENT_KEY_INSTANCE;
 			break;
 		case 9:
-			if(likely(0 == memcmp(str, "modifiers", 9)))
+			if(likely(0 == memcmp(str, "modifiers", 9))) {
 				g_cevent_data.current_key = CURRENT_KEY_MODIFIERS;
+				g_cevent_data.modifiers = 0;
+			}
 			break;
 	}
 	return true;
@@ -111,11 +130,10 @@ static int cevent_end_map(void *ctx) {
 
 	if (g_cevent_data.name == NULL || g_cevent_data.button == __CEVENT_MOUSE_UNSET)
 		return true;
-
 	FOREACH_RUN(run, g_cevent_data.runs) {
 		if ((0 == strcmp(run->vtable->name, g_cevent_data.name)) &&
 				(g_cevent_data.instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, g_cevent_data.instance))) {
-			if (run->vtable->func_cevent && run->vtable->func_cevent(run->data, g_cevent_data.button))
+			if (run->vtable->func_cevent && run->vtable->func_cevent(run->data, g_cevent_data.button, g_cevent_data.modifiers))
 				g_cevent_data.force_update = true;
 			break;
 		}
@@ -131,8 +149,7 @@ static const yajl_callbacks cevent_callbacks = {
 	.yajl_end_map = cevent_end_map,
 };
 
-
-bool handle_click_event(void *arg) {
+static bool handle_click_event(void *arg) {
 	(void)arg;
 
 	uint8_t input[2048];

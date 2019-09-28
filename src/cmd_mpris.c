@@ -161,14 +161,20 @@ static void cmd_mpris_recache(struct cmd_data_base *_data) {
 	}
 }
 
-static bool cmd_mpris_cevent(struct cmd_data_base *_data, int event) {
+static bool cmd_mpris_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 	const char *op = NULL;
 	switch (event) {
 		case CEVENT_MOUSE_MIDDLE:
-			op = "PlayPause";
+			op = (modifiers & (CEVENT_MOD_SHIFT | CEVENT_MOD_CONTROL)) ? "Stop" : "PlayPause";
 			break;
 		case CEVENT_MOUSE_LEFT:
+			if (modifiers & (CEVENT_MOD_SHIFT | CEVENT_MOD_CONTROL)) {
+				sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
+								   "org.mpris.MediaPlayer2.Player", "Seek", NULL, NULL,
+								   "x", -(int64_t)data->data.position * 1000000);
+				return false;
+			}
 			op = "Previous";
 			break;
 		case CEVENT_MOUSE_RIGHT:
