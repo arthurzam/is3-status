@@ -105,9 +105,10 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 				} else
 					pos = (2 * pos) + (1 + !!(cmp_res < 0));
 			} while (pos < ARRAY_SIZE(g_mem_opts));
-			if (!(start = strchr(start, '\n')))
+			char *endl = strchr(start, '\n');
+			if (!endl)
 				break;
-			start++;
+			start = endl + 1;
 		}
 		offset = (unsigned)(buffer + buf_len - start);
 		memmove(buffer, start, offset);

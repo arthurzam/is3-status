@@ -18,8 +18,12 @@
 #include "main.h"
 #include "vprint.h"
 
+#include <alloca.h>
 #include <string.h>
-#include <stdio.h>
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 struct cmd_battery_data {
 	struct cmd_data_base base;
@@ -29,7 +33,10 @@ struct cmd_battery_data {
 	char *format_charging;
 	char *format_full;
 
-	char *path;
+	union {
+		char *device;
+		int bat_fd;
+	};
 	long last_full_capacity;
 	long threshold_time;
 	long threshold_pct;
@@ -40,7 +47,7 @@ struct cmd_battery_data {
 static bool cmd_battery_init(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
 
-	if (!data->path)
+	if (!data->device)
 		return false;
 	if (!data->format_missing || !data->format_charging || !data->format_discharging)
 		return false;
@@ -48,9 +55,22 @@ static bool cmd_battery_init(struct cmd_data_base *_data) {
 		data->format_full = strdup(data->format_charging);
 
 	data->last_full_capacity = !!data->last_full_capacity;
-
 	data->base.cached_fulltext = data->cached_output;
-	return true;
+
+#define BATTERY_PATH "/sys/devices/virtual/power_supply/"
+#define BATTERY_PATH_SUFFIX "/uevent"
+	const size_t device_len = strlen(data->device);
+	char *path = alloca(strlen(BATTERY_PATH) + device_len + strlen(BATTERY_PATH_SUFFIX) + 1);
+	memcpy(path, BATTERY_PATH, strlen(BATTERY_PATH));
+	memcpy(path + strlen(BATTERY_PATH), data->device, device_len);
+	memcpy(path + strlen(BATTERY_PATH) + device_len, BATTERY_PATH_SUFFIX, strlen(BATTERY_PATH_SUFFIX) + 1);
+	free(data->device);
+	data->device = NULL;
+#undef BATTERY_PATH_SUFFIX
+#undef BATTERY_PATH
+
+	data->bat_fd = open(path, O_RDONLY);
+	return data->bat_fd >= 0;
 }
 
 static void cmd_battery_destroy(struct cmd_data_base *_data) {
@@ -59,7 +79,7 @@ static void cmd_battery_destroy(struct cmd_data_base *_data) {
 	free(data->format_discharging);
 	free(data->format_charging);
 	free(data->format_full);
-	free(data->path);
+	close(data->bat_fd);
 }
 
 struct battery_info_t {
@@ -81,7 +101,7 @@ enum {
 	BAT_STS_FULL = 3,
 };
 
-static bool cmd_battery_parse_file(const char *path, struct battery_info_t *info) {
+__attribute__((always_inline)) inline bool cmd_battery_parse_file(int fd, struct battery_info_t *info) {
 	enum {
 		BAT_OPT_STATUS = 0,
 		BAT_OPT_INT = 1,
@@ -109,45 +129,53 @@ static bool cmd_battery_parse_file(const char *path, struct battery_info_t *info
 	};
 #undef BAT_OPT
 
-	FILE *batFile = fopen(path, "r");
-	if (!batFile)
-		return false;
-	char line[256];
-	while (fgets(line, sizeof(line), batFile)) {
-		char *ptr = line;
-		if (0 != memcmp(line, "POWER_SUPPLY_", 13))
-			continue;
-		ptr += 13;
-		unsigned pos = 0;
-		do {
-			const int cmp_res = memcmp(g_bat_opts[pos].str, ptr, g_bat_opts[pos].str_len);
-			if (cmp_res == 0) {
-				const struct battery_opt_t *opt = g_bat_opts + pos;
-				ptr += opt->str_len + 1;
+	char buffer[2048];
+	ssize_t buf_len;
+	unsigned offset = 0;
+	lseek(fd, 0, SEEK_SET);
+	while (0 < (buf_len = offset + read(fd, buffer + offset, sizeof(buffer) - 1 - offset))) {
+		buffer[buf_len] = '\0';
+		char *start = buffer;
+		while (true) {
+			if (0 == memcmp(start, "POWER_SUPPLY_", 13)) {
+				start += 13;
+				unsigned pos = 0;
+				do {
+					const int cmp_res = memcmp(g_bat_opts[pos].str, start, g_bat_opts[pos].str_len);
+					if (cmp_res == 0) {
+						const struct battery_opt_t *opt = g_bat_opts + pos;
+						start += opt->str_len + 1;
 
-				int *const dst = ((int *)info) + opt->offset;
-				switch (opt->type) {
-					case BAT_OPT_STATUS: {
-						if (0 == memcmp(ptr, "Full", 4))
-							*dst = BAT_STS_FULL;
-						else if (0 == memcmp(ptr, "Charging", 8))
-							*dst = BAT_STS_CHARGIUNG;
+						int *const dst = ((int *)info) + opt->offset;
+						switch (opt->type) {
+							case BAT_OPT_STATUS: {
+								if (0 == memcmp(start, "Full", 4))
+									*dst = BAT_STS_FULL;
+								else if (0 == memcmp(start, "Charging", 8))
+									*dst = BAT_STS_CHARGIUNG;
+								break;
+							} case BAT_OPT_ABS_INT:
+								if (*start == '-')
+									++start;
+								/* fall through */
+							case BAT_OPT_INT:
+								*dst = atoi(start);
+								break;
+							default: __builtin_unreachable();
+						}
 						break;
-					} case BAT_OPT_ABS_INT:
-						if (*ptr == '-')
-							++ptr;
-						/* fall through */
-					case BAT_OPT_INT:
-						*dst = atoi(ptr);
-						break;
-					default: __builtin_unreachable();
-				}
+					} else
+						pos = (2 * pos) + (1 + !!(cmp_res < 0));
+				} while (pos < ARRAY_SIZE(g_bat_opts));
+			}
+			char *endl = strchr(start, '\n');
+			if (!endl)
 				break;
-			} else
-				pos = (2 * pos) + (1 + !!(cmp_res < 0));
-		} while (pos < ARRAY_SIZE(g_bat_opts));
+			start = endl + 1;
+		}
+		offset = (unsigned)(buffer + buf_len - start);
+		memmove(buffer, start, offset);
 	}
-	fclose(batFile);
 	return true;
 }
 
@@ -162,7 +190,7 @@ static void cmd_battery_recache(struct cmd_data_base *_data) {
 
 	/* read file */
 	{
-		if (cmd_battery_parse_file(data->path, &info)) {
+		if (cmd_battery_parse_file(data->bat_fd, &info)) {
 			full_design = data->last_full_capacity ? info.full_design_capacity : info.full_design_design;
 			if (info.remainingW < 0)
 				info.remainingW = info.remainingAh;
@@ -222,13 +250,13 @@ _Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_ba
 }
 
 #define BAT_OPTIONS(F) \
+	F("device", OPT_TYPE_STR, offsetof(struct cmd_battery_data, device)), \
 	F("format_charging", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_charging)), \
 	F("format_discharging", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_discharging)), \
 	F("format_full", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_full)), \
 	F("format_missing", OPT_TYPE_STR, offsetof(struct cmd_battery_data, format_missing)), \
 	F("interval", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, base.interval)), \
 	F("last_full_capacity", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, last_full_capacity)), \
-	F("path", OPT_TYPE_STR, offsetof(struct cmd_battery_data, path)), \
 	F("threshold_pct", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, threshold_pct)), \
 	F("threshold_time", OPT_TYPE_LONG, offsetof(struct cmd_battery_data, threshold_time)), \
 

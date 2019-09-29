@@ -29,10 +29,12 @@
 struct cmd_backlight_data {
 	struct cmd_data_base base;
 	char *format;
-	char *device;
-	long wheel_step;
+	union {
+		char *device;
+		int backlight_fd;
+	};
 	long max_brightness;
-	int backlight_fd;
+	long wheel_step;
 	bool supports_changing;
 	char cached_output[128];
 };

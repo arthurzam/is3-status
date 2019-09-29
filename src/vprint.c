@@ -77,7 +77,8 @@ void vprint_time(struct vprint *ctx, int value) {
 	int m = value % 60;
 	if (value >= 60) {
 		vprint_itoa(ctx, value / 60);
-		vprint_ch(ctx, ':');
+		ctx->buffer_start[0] = ':';
+		ctx->buffer_start += 1;
 	}
 	ctx->buffer_start[0] = (char)('0' + (m / 10));
 	ctx->buffer_start[1] = (char)('0' + (m % 10));

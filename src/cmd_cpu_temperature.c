@@ -28,9 +28,11 @@
 struct cmd_cpu_temperature_data {
 	struct cmd_data_base base;
 	char *format;
-	char *device;
+	union {
+		char *device;
+		int thermal_dir_fd;
+	};
 	long high_threshold;
-	int thermal_dir_fd;
 	char cached_output[128];
 };
 
