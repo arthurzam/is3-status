@@ -204,9 +204,9 @@ _Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_ba
 #undef BAT_POS_CHECK
 	}
 	const char *output_format = *(&data->format_missing + info.status);
-	int res;
+	unsigned res;
 	struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-	while ((res = vprint_walk(&ctx)) >= 0) {
+	while ((res = vprint_walk(&ctx)) != 0) {
 		switch (res) {
 			case 'b':
 				vprint_itoa(&ctx, (int)remaining_pct);

@@ -26,15 +26,15 @@ static void vprint_ch(struct vprint *ctx, char ch) {
 	ctx->buffer_start += 1;
 }
 
-int vprint_walk(struct vprint *ctx) {
+unsigned vprint_walk(struct vprint *ctx) {
 	const char *next = strchr(ctx->curr_pos, '%');
 	if (!next) {
 		vprint_strcat(ctx, ctx->curr_pos);
-		return -1;
+		return 0;
 	}
 	const size_t len = (size_t)(next - ctx->curr_pos);
 	if (ctx->buffer_start + len >= ctx->buffer_end)
-		return -1;
+		return 0;
 	memcpy(ctx->buffer_start, ctx->curr_pos, len);
 	ctx->buffer_start[len] = '\0';
 	ctx->buffer_start += len;
@@ -46,7 +46,7 @@ int vprint_walk(struct vprint *ctx) {
 		vprint_ch(ctx, '%');
 		return vprint_walk(ctx);
 	}
-	return -1;
+	return 0;
 }
 
 void vprint_strcat(struct vprint *ctx, const char *str) {

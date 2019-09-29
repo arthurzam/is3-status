@@ -66,9 +66,9 @@ static void cmd_eth_recache(struct cmd_data_base *_data) {
 	const char *output_format = (curr_if->is_down && data->format_down) ? data->format_down : data->format_up;
 
 	bool noIP = false;
-	int res;
+	unsigned res;
 	struct vprint ctx = {cmd_eth_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-	while ((res = vprint_walk(&ctx)) >= 0) {
+	while ((res = vprint_walk(&ctx)) != 0) {
 		const char *addr = NULL;
 		switch (res) {
 			case 'a':

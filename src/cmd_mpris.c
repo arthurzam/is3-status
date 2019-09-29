@@ -126,9 +126,9 @@ static void cmd_mpris_recache(struct cmd_data_base *_data) {
 	} else
 		CMD_COLOR_CLEAN(data);
 
-	int res;
+	unsigned res;
 	struct vprint ctx = {cmd_mpris_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-	while ((res = vprint_walk(&ctx)) >= 0) {
+	while ((res = vprint_walk(&ctx)) != 0) {
 		switch (res) {
 			case 'A':
 				if (data->data.album)

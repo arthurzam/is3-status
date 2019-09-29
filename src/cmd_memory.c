@@ -19,7 +19,6 @@
 #include "vprint.h"
 
 #include <string.h>
-#include <stdio.h>
 
 #include <sys/types.h>
 #include <unistd.h>
@@ -124,9 +123,9 @@ static void cmd_memory_recache(struct cmd_data_base *_data) {
 
 	struct memory_info_t info = {0};
 	if (likely(cmd_memory_file(&info, data->fd))) {
-		int res;
+		unsigned res;
 		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
+		while ((res = vprint_walk(&ctx)) != 0) {
 			int64_t value;
 			switch (res | 0x20) { // convert to lower case
 				case 'a': value = info.ram_available; break;

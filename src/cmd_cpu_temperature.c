@@ -82,9 +82,9 @@ static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 		close(fd);
 	}
 
-	int res;
+	unsigned res;
 	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-	while ((res = vprint_walk(&ctx)) >= 0) {
+	while ((res = vprint_walk(&ctx)) != 0) {
 		if (curr_value == -1)
 			vprint_strcat(&ctx, "???");
 		else {

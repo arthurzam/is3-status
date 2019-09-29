@@ -34,10 +34,10 @@ struct vprint {
  * @brief vprint_walk traverse the vprint instance until the end
  *
  * @param ctx the vprint instance
- * @return Negetive number if needs to stop the traversing (end of format, no enough buffer, incorrect option), else
+ * @return zero if needs to stop the traversing (end of format, no enough buffer, incorrect option), else
  * returns the current option (for example for "%s" will return 's').
  */
-int vprint_walk(struct vprint *ctx);
+unsigned vprint_walk(struct vprint *ctx);
 void vprint_strcat(struct vprint *ctx, const char *str);
 void vprint_itoa(struct vprint *ctx, int value);
 void vprint_dtoa(struct vprint *ctx, double value);

@@ -59,11 +59,11 @@ static void cmd_disk_usage_recache(struct cmd_data_base *_data) {
 	struct cmd_disk_usage_data *data = (struct cmd_disk_usage_data *)_data;
 
 	struct statvfs buf;
-	int res;
+	unsigned res;
 
 	if (statvfs(data->vfs_path, &buf) == 0) {
 		struct vprint ctx = {cmd_disk_usage_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
+		while ((res = vprint_walk(&ctx)) != 0) {
 			uint64_t value = 0;
 			switch (res | 0x20) { // convert to lower case
 				case 'a': value = (uint64_t)buf.f_bavail; break;

@@ -147,8 +147,6 @@ VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x
 static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 
-	int res;
-
 	long mixer_volume;
 	snd_mixer_handle_events(data->mixer);
 	snd_mixer_selem_get_playback_volume(data->elem, 0, &mixer_volume);
@@ -157,7 +155,7 @@ static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	const char *output_format = data->format;
 	CMD_COLOR_CLEAN(data);
 	if (data->supportes_mute) {
-		int pbval;
+		int pbval, res;
 		if ((res = snd_mixer_selem_get_playback_switch(data->elem, 0, &pbval)) < 0)
 			fprintf(stderr, "ALSA: get_playback_switch: %s\n", snd_strerror(res));
 		if (!pbval) {
@@ -168,7 +166,7 @@ static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	}
 
 	struct vprint ctx = {cmd_volume_alsa_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-	while ((res = vprint_walk(&ctx)) >= 0) {
+	while (vprint_walk(&ctx) != 0) {
 		vprint_itoa(&ctx, volume);
 	}
 }

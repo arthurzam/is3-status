@@ -64,9 +64,9 @@ static void cmd_load_recache(struct cmd_data_base *_data) {
 			tmp = strchr(tmp, ' ');
 			*(tmp++) = '\0';
 		}
-		int res;
+		unsigned res;
 		struct vprint ctx = {cmd_load_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
+		while ((res = vprint_walk(&ctx)) != 0) {
 			vprint_strcat(&ctx, loadavgs[res - '1']);
 		}
 	}

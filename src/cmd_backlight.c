@@ -99,9 +99,8 @@ VPRINT_OPTS(cmd_backlight_data_var_options, {0x00000000, 0x00000000, 0x00400000,
 static void cmd_backlight_update_text(struct cmd_backlight_data *data, long value) {
 	if (likely(value >= 0)) {
 		const int brightness = (int)((value * 100 + data->max_brightness / 2) / data->max_brightness);
-		int res;
 		struct vprint ctx = {cmd_backlight_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
-		while ((res = vprint_walk(&ctx)) >= 0) {
+		while (vprint_walk(&ctx) != 0) {
 			vprint_itoa(&ctx, brightness);
 		}
 	}
