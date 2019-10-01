@@ -53,7 +53,7 @@ static bool cmd_sway_language_get_socketpath(struct sockaddr_un *addr) {
 
 	FILE *fp = popen("sway --get-socketpath 2>/dev/null", "r");
 	if (fp) {
-		size_t nret = fread(addr->sun_path, 1, sizeof(addr->sun_path) - 1, fp);
+		size_t nret = fread_unlocked(addr->sun_path, 1, sizeof(addr->sun_path) - 1, fp);
 		pclose(fp);
 		addr->sun_path[nret] = '\0';
 		if (nret > 0) {

@@ -173,7 +173,7 @@ struct runs_list ini_parse(const char *argv_path) {
 		return (struct runs_list){NULL, NULL};
 	}
 
-	while (fgets(buffer, sizeof(buffer) - 1, ini_file)) {
+	while (fgets_unlocked(buffer, sizeof(buffer) - 1, ini_file)) {
 		ptr = buffer;
 
 		for (; isspace(*ptr); ++ptr);

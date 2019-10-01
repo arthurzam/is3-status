@@ -98,7 +98,8 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 				const int cmp_res = memcmp(g_mem_opts[pos].str, start, g_mem_opts[pos].str_len);
 				if (cmp_res == 0) {
 					int64_t *const dst = ((int64_t *)info) + g_mem_opts[pos].offset;
-					*dst = atoll(start + g_mem_opts[pos].str_len) * 1024;
+					start += g_mem_opts[pos].str_len;
+					*dst = atoll(start) * 1024;
 					if (++found == ARRAY_SIZE(g_mem_opts))
 						return true;
 					break;
