@@ -90,7 +90,7 @@ enum click_event_modifiers {
 struct cmd {
 	const char *const name; ///< name of module
 	void(*func_recache)(struct cmd_data_base *data);
-	bool(*func_cevent)(struct cmd_data_base *data, unsigned event, unsigned modifiers);
+	void(*func_cevent)(struct cmd_data_base *data, unsigned event, unsigned modifiers);
 	/**
 	 * @brief Initialize the instance
 	 *

@@ -125,7 +125,7 @@ static void cmd_x11_language_recache(struct cmd_data_base *_data) {
 #undef BAT_POS_CHECK
 }
 
-static bool cmd_x11_language_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+static void cmd_x11_language_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
 	(void) modifiers;
 	struct cmd_x11_language_data *data = (struct cmd_x11_language_data *)_data;
 
@@ -139,14 +139,13 @@ static bool cmd_x11_language_cevent(struct cmd_data_base *_data, unsigned event,
 			toogle_mask = 0x02;
 			check_mask = (1U << 0);
 			break;
-		default: return false;
+		default: return;
 	}
 	XKeyboardState values;
 	XGetKeyboardControl(data->dpy, &values);
 	unsigned value_mask = ((values.led_mask & check_mask) == 0) ? toogle_mask : 0;
 	XkbLockModifiers(data->dpy, XkbUseCoreKbd, toogle_mask, value_mask);
 	cmd_x11_language_recache(_data);
-	return false;
 }
 
 #define X11_LANG_OPTIONS(F) \

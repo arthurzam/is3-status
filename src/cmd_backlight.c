@@ -113,7 +113,7 @@ static void cmd_backlight_recache(struct cmd_data_base *_data) {
 	cmd_backlight_update_text(data, cmd_backlight_read_value(data->backlight_fd));
 }
 
-static bool cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+static void cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
 	(void) modifiers;
 	struct cmd_backlight_data *data = (struct cmd_backlight_data *)_data;
 	if (data->supports_changing) {
@@ -129,7 +129,7 @@ static bool cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, un
 			case CEVENT_MOUSE_WHEEL_DOWN: {
 				new_value = cmd_backlight_read_value(data->backlight_fd);
 				if (unlikely(new_value < 0))
-					return false;
+					return;
 
 				const long change = (data->wheel_step * data->max_brightness + (100 / 2)) / 100;
 				if (event == CEVENT_MOUSE_WHEEL_UP) {
@@ -143,8 +143,7 @@ static bool cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, un
 				}
 				break;
 			}
-			default:
-				return false;
+			default: return;
 		}
 		char res[64];
 		int res_len = snprintf(res, sizeof(res), "%ld", new_value);
@@ -152,7 +151,6 @@ static bool cmd_backlight_cevent(struct cmd_data_base *_data, unsigned event, un
 		if (likely(res_len == write(data->backlight_fd, res, (size_t)res_len)))
 			cmd_backlight_update_text(data, new_value);
 	}
-	return false;
 }
 
 #define CPU_TEMP_OPTIONS(F) \

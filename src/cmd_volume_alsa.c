@@ -171,7 +171,7 @@ static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	}
 }
 
-static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+static void cmd_volume_alsa_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
 	(void) modifiers;
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 	int res;
@@ -206,9 +206,9 @@ static bool cmd_volume_alsa_cevent(struct cmd_data_base *_data, unsigned event, 
 			}
 			snd_mixer_selem_set_playback_volume(data->elem, 0, val);
 			cmd_volume_alsa_recache(_data);
+			break;
 		}
 	}
-	return false;
 }
 
 #define VOLUME_ALSA_OPTIONS(F) \

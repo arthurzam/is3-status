@@ -47,7 +47,6 @@ static struct {
 	uint8_t button;
 	uint8_t current_key;
 	uint8_t modifiers;
-	bool force_update;
 } g_cevent_data;
 
 static int cevent_integer(void *ctx, long long value) {
@@ -133,8 +132,8 @@ static int cevent_end_map(void *ctx) {
 	FOREACH_RUN(run, g_cevent_data.runs) {
 		if ((0 == strcmp(run->vtable->name, g_cevent_data.name)) &&
 				(g_cevent_data.instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, g_cevent_data.instance))) {
-			if (run->vtable->func_cevent && run->vtable->func_cevent(run->data, g_cevent_data.button, g_cevent_data.modifiers))
-				g_cevent_data.force_update = true;
+			if (run->vtable->func_cevent)
+				run->vtable->func_cevent(run->data, g_cevent_data.button, g_cevent_data.modifiers);
 			break;
 		}
 	}
@@ -153,13 +152,12 @@ static bool handle_click_event(void *arg) {
 	(void)arg;
 
 	uint8_t input[2048];
-	g_cevent_data.force_update = false;
 	ssize_t ret = read(STDIN_FILENO, input, sizeof(input));
 	if (ret > 0)
 		yajl_parse(g_cevent_data.yajl_parse_handle, input, (size_t)ret);
 	else
 		close(STDIN_FILENO);
-	return g_cevent_data.force_update;
+	return false;
 }
 
 void init_cevent_handle(struct runs_list *runs) {

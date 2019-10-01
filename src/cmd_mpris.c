@@ -161,7 +161,7 @@ static void cmd_mpris_recache(struct cmd_data_base *_data) {
 	}
 }
 
-static bool cmd_mpris_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
+static void cmd_mpris_cevent(struct cmd_data_base *_data, unsigned event, unsigned modifiers) {
 	struct cmd_mpris_data *data = (struct cmd_mpris_data *)_data;
 	const char *op = NULL;
 	switch (event) {
@@ -173,19 +173,17 @@ static bool cmd_mpris_cevent(struct cmd_data_base *_data, unsigned event, unsign
 				sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 								   "org.mpris.MediaPlayer2.Player", "Seek", NULL, NULL,
 								   "x", -(int64_t)data->data.position * 1000000);
-				return false;
+				return;
 			}
 			op = "Previous";
 			break;
 		case CEVENT_MOUSE_RIGHT:
 			op = "Next";
 			break;
-		default:
-			return false;
+		default: return;
 	}
 	sd_bus_call_method(data->bus, data->mpris_service, "/org/mpris/MediaPlayer2",
 					   "org.mpris.MediaPlayer2.Player", op, NULL, NULL, NULL);
-	return false;
 }
 
 #define MPRIS_OPTIONS(F) \
