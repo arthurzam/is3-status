@@ -16,6 +16,7 @@
 */
 
 #include "main.h"
+#include "fdpoll.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,14 +27,14 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include <yajl/yajl_tree.h>
+#include <yajl/yajl_parse.h>
 
 struct cmd_sway_language_data {
 	struct cmd_data_base base;
+
 	char *keyboard_name;
-	char *buffer;
-	unsigned buffer_size;
 	int socketfd;
+	char cached_output[256];
 };
 
 struct msg_header_t {
@@ -43,143 +44,169 @@ struct msg_header_t {
 } __attribute__((packed));
 _Static_assert(sizeof(struct msg_header_t) == 14, "incorrect size for struct msg_header_t");
 
-static bool cmd_sway_language_get_socketpath(struct sockaddr_un *addr) {
-	const char *sock = getenv("SWAYSOCK");
-	if (sock) {
-		strncpy(addr->sun_path, sock, sizeof(addr->sun_path) - 1);
-		addr->sun_path[sizeof(addr->sun_path) - 1] = '\0';
-		return true;
-	}
+enum SWAY_IPC {
+	IPC_SUBSCRIBE = 2,
+	IPC_GET_INPUTS = 100,
+};
 
-	FILE *fp = popen("sway --get-socketpath 2>/dev/null", "r");
-	if (fp) {
-		size_t nret = fread_unlocked(addr->sun_path, 1, sizeof(addr->sun_path) - 1, fp);
-		pclose(fp);
-		addr->sun_path[nret] = '\0';
-		if (nret > 0) {
-			if (addr->sun_path[nret - 1] == '\n')
-				addr->sun_path[nret - 1] = '\0';
-			return true;
+enum CURRENT_KEY {
+	CURRENT_KEY_UNSET = 0,
+	CURRENT_KEY_IDENTIFIER = 1, // "identifier"
+	CURRENT_KEY_XKB_LAYOUT = 2, // "xkb_active_layout_name"
+};
+
+struct cmd_sway_language_yajl_ctx {
+	struct cmd_sway_language_data *data;
+	const unsigned char *keyboard_layout;
+	size_t keyboard_layout_len;
+	uint8_t current_field;
+	uint8_t depth;
+	bool matching_identifier;
+};
+
+static int cmd_sway_language_yajl_string(void *_ctx, const unsigned char *str, size_t len) {
+	struct cmd_sway_language_yajl_ctx *ctx = _ctx;
+	if (len != 0) {
+		if (ctx->current_field == CURRENT_KEY_IDENTIFIER) {
+			if (0 == memcmp(str, ctx->data->keyboard_name, len))
+				ctx->matching_identifier = true;
+		} else if (ctx->current_field == CURRENT_KEY_XKB_LAYOUT) {
+			ctx->keyboard_layout = str;
+			ctx->keyboard_layout_len = len;
 		}
 	}
-	return false;
+	return true;
 }
-
-static void cmd_sway_language_query(struct cmd_sway_language_data *data) {
-	/* send msg on IPC */
-	{
-		static const struct msg_header_t sway_lang_msg = {
-			.magic = {'i', '3', '-', 'i', 'p', 'c'},
-			.size = 0,
-			.type = 100
-		};
-		if (unlikely(0 > write(data->socketfd, &sway_lang_msg, sizeof(sway_lang_msg)))) {
-			fprintf(stderr, "sway-language: unable to send request, error %s\n", strerror(errno));
-			return;
-		}
+static int cmd_sway_language_yajl_map_key(void *_ctx, const unsigned char *str, size_t len) {
+	struct cmd_sway_language_yajl_ctx *ctx = _ctx;
+	ctx->current_field = CURRENT_KEY_UNSET;
+	switch (len) {
+		case 10:
+			if(likely(0 == memcmp(str, "identifier", 10)))
+				ctx->current_field = CURRENT_KEY_IDENTIFIER;
+			break;
+		case 22:
+			if(likely(0 == memcmp(str, "xkb_active_layout_name", 22)))
+				ctx->current_field = CURRENT_KEY_XKB_LAYOUT;
+			break;
 	}
-
-	/* recv msg on IPC */
-	{
-		struct msg_header_t recv_buf;
-		size_t total = 0;
-		do {
-			ssize_t received = read(data->socketfd, (uint8_t*)(&recv_buf) + total, sizeof(recv_buf) - total);
-			if (received <= 0) {
-				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
-				return;
-			}
-			total += (size_t)received;
-		} while (total < sizeof(recv_buf));
-
-		if (data->buffer_size < recv_buf.size + 1) {
-			data->buffer_size = recv_buf.size + 1;
-			data->buffer = realloc(data->buffer, data->buffer_size);
-		}
-		total = 0;
-		do {
-			ssize_t received = read(data->socketfd, data->buffer + total, recv_buf.size - total);
-			if (received <= 0) {
-				fprintf(stderr, "sway-language: Unable to receive IPC response, error %s\n", strerror(errno));
-				return;
-			}
-			total += (size_t)received;
-		} while (total < recv_buf.size);
-		data->buffer[recv_buf.size] = '\0';
+	return true;
+}
+static int cmd_sway_language_yajl_start_map(void *_ctx) {
+	struct cmd_sway_language_yajl_ctx *ctx = _ctx;
+	if ((++ctx->depth) == 1) {
+		ctx->keyboard_layout = NULL;
+		ctx->keyboard_layout_len = 0;
+		ctx->current_field = CURRENT_KEY_UNSET;
+		ctx->matching_identifier = false;
 	}
+	return true;
+}
+static int cmd_sway_language_yajl_end_map(void *_ctx) {
+	struct cmd_sway_language_yajl_ctx *ctx = _ctx;
 
-	/* parse msg */
-	{
-		yajl_val node = yajl_tree_parse(data->buffer, NULL, 0);
-
-		if (likely(YAJL_IS_ARRAY(node))) {
-			for (size_t i = 0; i < node->u.array.len; ++i ) {
-				char *xkb_active_layout_name = NULL;
-				int found = 0;
-				yajl_val obj = node->u.array.values[i];
-
-				for (size_t ii = 0; ii < obj->u.object.len; ++ii ) {
-					const char *key = obj->u.object.keys[ ii ];
-					yajl_val value = obj->u.object.values[ ii ];
-					if (!YAJL_IS_STRING(value))
-						continue;
-					if (0 == strcmp(key, "identifier")) {
-						if (0 != strcmp(value->u.string, data->keyboard_name))
-							continue;
-						found = 1;
-					} else if (0 == strcmp(key, "xkb_active_layout_name")) {
-						xkb_active_layout_name = YAJL_GET_STRING(value);
-					}
-					if (found && xkb_active_layout_name) {
-						if (!data->base.cached_fulltext || 0 != strcmp(xkb_active_layout_name, data->base.cached_fulltext)) {
-							free(data->base.cached_fulltext);
-							data->base.cached_fulltext = strdup(xkb_active_layout_name);
-						}
-						goto _exit;
-					}
-				}
-			}
-		}
-_exit:
-		yajl_tree_free(node);
+	if ((--ctx->depth) == 0 && ctx->keyboard_layout && ctx->matching_identifier) {
+		if (ctx->keyboard_layout_len > sizeof(ctx->data->cached_output) - 1)
+			ctx->keyboard_layout_len = sizeof(ctx->data->cached_output) - 1;
+		memcpy(ctx->data->cached_output, ctx->keyboard_layout, ctx->keyboard_layout_len);
+		ctx->data->cached_output[ctx->keyboard_layout_len] = '\0';
+		return false;
 	}
+	return true;
+}
+static const yajl_callbacks cevent_callbacks = {
+	.yajl_string = cmd_sway_language_yajl_string,
+	.yajl_map_key = cmd_sway_language_yajl_map_key,
+	.yajl_start_map = cmd_sway_language_yajl_start_map,
+	.yajl_end_map = cmd_sway_language_yajl_end_map,
+};
+
+static bool handle_sway_language_events(void *arg) {
+	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)arg;
+
+	struct msg_header_t recv_buf;
+	if (unlikely(sizeof(recv_buf) != read(data->socketfd, (&recv_buf), sizeof(recv_buf))))
+		return false;
+	ssize_t remaining = recv_buf.size;
+	uint8_t buffer[2048];
+	struct cmd_sway_language_yajl_ctx ctx = {
+		.data = data
+	};
+	yajl_handle yajl_parse_handle = yajl_alloc(&cevent_callbacks, NULL, &ctx);
+	do {
+		ssize_t received = sizeof(buffer);
+		if (received > remaining)
+			received = remaining;
+		received = read(data->socketfd, buffer, received);
+		if (unlikely(received <= 0))
+			goto _free_yajl;
+		remaining -= received;
+		yajl_parse(yajl_parse_handle, buffer, (size_t)received);
+	} while (remaining > 0);
+_free_yajl:
+	yajl_free(yajl_parse_handle);
+	return false;
 }
 
 static bool cmd_sway_language_init(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 
-	if (!data->keyboard_name)
+	const char *sock = getenv("SWAYSOCK");
+	if (!sock) {
+		fputs("sway-language: empty SWAYSOCK\n", stderr);
 		return false;
-
+	}
 	if ((data->socketfd = socket(AF_UNIX, SOCK_STREAM, 0)) < 0) {
-		fputs("sway-language: Unable to open Unix socket\n", stderr);
+		fputs("socket(sway-language) failed\n", stderr);
 		return false;
 	}
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
-	if (!cmd_sway_language_get_socketpath(&addr)) {
-		fputs("sway-language: Unable to find Sway socket\n", stderr);
-		return false;
-	}
+	strncpy(addr.sun_path, sock, sizeof(addr.sun_path) - 1);
+	addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 	if (connect(data->socketfd, (struct sockaddr *)&addr, sizeof(struct sockaddr_un)) < 0) {
-		fprintf(stderr, "sway-language: Unable to connect to %s\n", addr.sun_path);
+		fprintf(stderr, "connect(sway-language) failed %s\n", addr.sun_path);
 		return false;
 	}
 
+	static const struct {
+		struct msg_header_t header;
+		char payload[9];
+	} sway_ipc_subscribe = {
+		{
+			.magic = "i3-ipc",
+			.size = sizeof(sway_ipc_subscribe.payload),
+			.type = IPC_SUBSCRIBE
+		}, "[\"input\"]"
+	};
+
+	if (unlikely(0 > write(data->socketfd, &sway_ipc_subscribe, sizeof(sway_ipc_subscribe)))) {
+		return false;
+	}
+
+	fdpoll_add(data->socketfd, handle_sway_language_events, data);
+
+	data->base.cached_fulltext = data->cached_output;
+	data->base.interval = -1;
 	return true;
 }
 
 static void cmd_sway_language_destroy(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
 	close(data->socketfd);
-	free(data->buffer);
-	free(data->keyboard_name);
-	free(data->base.cached_fulltext);
 }
 
 static void cmd_sway_language_recache(struct cmd_data_base *_data) {
 	struct cmd_sway_language_data *data = (struct cmd_sway_language_data *)_data;
-	cmd_sway_language_query(data);
+
+	static const struct msg_header_t sway_ipc_get_inputs = {
+		.magic = "i3-ipc",
+		.size = 0,
+		.type = IPC_GET_INPUTS
+	};
+	if (unlikely(0 > write(data->socketfd, &sway_ipc_get_inputs, sizeof(sway_ipc_get_inputs)))) {
+		return;
+	}
 }
 
 #define SWAY_LANG_OPTIONS(F) \
