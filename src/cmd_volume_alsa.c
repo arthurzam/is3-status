@@ -141,14 +141,13 @@ static void cmd_volume_alsa_destroy(struct cmd_data_base *_data) {
 	free(data->format_muted);
 }
 
-// generaterd using command ./gen-format.py vV
+// generaterd using command ./scripts/gen-format.py vV
 VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
 static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {
 	struct cmd_volume_alsa_data *data = (struct cmd_volume_alsa_data *)_data;
 
 	long mixer_volume;
-	snd_mixer_handle_events(data->mixer);
 	snd_mixer_selem_get_playback_volume(data->elem, 0, &mixer_volume);
 
 	const int volume = (int)(((mixer_volume - data->volume_min) * 100 + data->volume_range / 2) / data->volume_range);

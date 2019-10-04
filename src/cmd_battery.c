@@ -180,7 +180,7 @@ __attribute__((always_inline)) inline bool cmd_battery_parse_file(int fd, struct
 }
 
 // generaterd using command ./scripts/gen-format.py bBt
-VPRINT_OPTS(cmd_battery_data_var_options, {0x00000000, 0x00000000, 0x00000004, 0x00100004});
+VPRINT_OPTS(cmd_battery_var_options, {0x00000000, 0x00000000, 0x00000004, 0x00100004});
 
 static void cmd_battery_recache(struct cmd_data_base *_data) {
 	struct cmd_battery_data *data = (struct cmd_battery_data *)_data;
@@ -233,7 +233,7 @@ _Static_assert(offsetof(struct cmd_battery_data, field) - offsetof(struct cmd_ba
 	}
 	const char *output_format = *(&data->format_missing + info.status);
 	unsigned res;
-	struct vprint ctx = {cmd_battery_data_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+	struct vprint ctx = {cmd_battery_var_options, output_format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) != 0) {
 		switch (res) {
 			case 'b':

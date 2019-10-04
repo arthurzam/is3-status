@@ -237,7 +237,7 @@ _error:
 }
 
 void free_all_run_instances(struct runs_list *runs) {
-	for (struct run_instance *run = runs->runs_begin; run != runs->runs_end; run++) {
+	FOREACH_RUN(run, runs) {
 		run->vtable->func_destroy(run->data);
 		free(run->data);
 		free(run->instance);

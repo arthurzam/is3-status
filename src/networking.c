@@ -64,7 +64,7 @@ unsigned net_add_if(const char *if_name) {
 	if (g_net_global.netlink_fd == 0) {
 		g_net_global.netlink_fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
 		if (unlikely(g_net_global.netlink_fd < 0)) {
-			fprintf(stderr, "netlink: socket failed: %s\n", strerror(errno));
+			fprintf(stderr, "socket(netlink) failed: %s\n", strerror(errno));
 			return NET_ADD_IF_FAILED;
 		}
 
@@ -75,7 +75,7 @@ unsigned net_add_if(const char *if_name) {
 		};
 
 		if (unlikely(bind(g_net_global.netlink_fd, (struct sockaddr *)&addr, sizeof(addr)) < 0)) {
-			fprintf(stderr, "netlink: bind failed: %s\n", strerror(errno));
+			fprintf(stderr, "bind(netlink) failed: %s\n", strerror(errno));
 			return NET_ADD_IF_FAILED;
 		}
 
@@ -117,8 +117,6 @@ bool handle_netlink_read(void *arg) {
 			bool isDel = false;
 			switch (h->nlmsg_type) {
 				case NLMSG_ERROR:
-					fprintf(stderr, "read_netlink: some kind of error\n");
-					/* fall through */
 				case NLMSG_DONE:
 					return res;
 				case RTM_DELLINK:

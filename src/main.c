@@ -28,8 +28,7 @@
 
 void init_cevent_handle(struct runs_list *runs);
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 #ifdef TESTS
 	if (!test_cmd_array_correct())
 		return 1;
@@ -101,7 +100,7 @@ int main(int argc, char *argv[])
 
 			if (run->data->cached_color[0]) {
 				OUTPUT_CONST_STR("\",\"color\":\"");
-				memcpy(ptr, run->data->cached_color, 7);
+				memcpy(ptr, run->data->cached_color, 8);
 				ptr += 7;
 			}
 			*(ptr++) = '\"';
@@ -112,7 +111,7 @@ int main(int argc, char *argv[])
 		*(ptr++) = '\n';
 
 		if (unlikely(0 > write(STDOUT_FILENO, output_buffer, (size_t)(ptr - output_buffer)))) {
-			fprintf(stderr, "main: unable to send output, error %s\n", strerror(errno));
+			fprintf(stderr, "main: unable to send output: %s\n", strerror(errno));
 		}
 	}
 

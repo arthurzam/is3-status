@@ -126,15 +126,14 @@ static int cevent_start_map(void *ctx) {
 
 static int cevent_end_map(void *ctx) {
 	(void) ctx;
-
-	if (g_cevent_data.name == NULL || g_cevent_data.button == __CEVENT_MOUSE_UNSET)
-		return true;
-	FOREACH_RUN(run, g_cevent_data.runs) {
-		if ((0 == strcmp(run->vtable->name, g_cevent_data.name)) &&
-				(g_cevent_data.instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, g_cevent_data.instance))) {
-			if (run->vtable->func_cevent)
-				run->vtable->func_cevent(run->data, g_cevent_data.button, g_cevent_data.modifiers);
-			break;
+	if (likely(g_cevent_data.name != NULL && g_cevent_data.button != __CEVENT_MOUSE_UNSET)) {
+		FOREACH_RUN(run, g_cevent_data.runs) {
+			if ((0 == strcmp(run->vtable->name, g_cevent_data.name)) &&
+					(g_cevent_data.instance == run->instance/* == NULL*/ || 0 == strcmp(run->instance, g_cevent_data.instance))) {
+				if (run->vtable->func_cevent)
+					run->vtable->func_cevent(run->data, g_cevent_data.button, g_cevent_data.modifiers);
+				break;
+			}
 		}
 	}
 	return true;
@@ -153,7 +152,7 @@ static bool handle_click_event(void *arg) {
 
 	uint8_t input[2048];
 	ssize_t ret = read(STDIN_FILENO, input, sizeof(input));
-	if (ret > 0)
+	if (likely(ret > 0))
 		yajl_parse(g_cevent_data.yajl_parse_handle, input, (size_t)ret);
 	else
 		close(STDIN_FILENO);

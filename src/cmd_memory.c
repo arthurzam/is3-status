@@ -118,7 +118,7 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 }
 
 // generaterd using command ./scripts/gen-format.py AaFfSstUu
-VPRINT_OPTS(cmd_memory_data_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
+VPRINT_OPTS(cmd_memory_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
 
 static void cmd_memory_recache(struct cmd_data_base *_data) {
 	struct cmd_memory_data *data = (struct cmd_memory_data *)_data;
@@ -126,7 +126,7 @@ static void cmd_memory_recache(struct cmd_data_base *_data) {
 	struct memory_info_t info = {0};
 	if (likely(cmd_memory_file(&info, data->fd))) {
 		unsigned res;
-		struct vprint ctx = {cmd_memory_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+		struct vprint ctx = {cmd_memory_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 		while ((res = vprint_walk(&ctx)) != 0) {
 			int64_t value;
 			switch (res | 0x20) { // convert to lower case

@@ -33,11 +33,11 @@ struct cmd_load_data {
 
 static bool cmd_load_init(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
-	data->fd = open("/proc/loadavg", O_RDONLY);
-	if (data->fd < 0)
+	if (!data->format)
 		return false;
 	data->base.cached_fulltext = data->cached_output;
-	return data->format;
+	data->fd = open("/proc/loadavg", O_RDONLY);
+	return data->fd >= 0;
 }
 
 static void cmd_load_destroy(struct cmd_data_base *_data) {

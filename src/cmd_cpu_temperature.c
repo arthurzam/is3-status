@@ -30,7 +30,7 @@ struct cmd_cpu_temperature_data {
 	char *format;
 	union {
 		char *device;
-		int thermal_dir_fd;
+		int thermal_fd;
 	};
 	long high_threshold;
 	char cached_output[128];
@@ -46,48 +46,48 @@ static bool cmd_cpu_temperature_init(struct cmd_data_base *_data) {
 	data->base.cached_fulltext = data->cached_output;
 
 #define THERMAL_PATH "/sys/devices/virtual/thermal/"
+#define THERMAL_PATH_SUFFIX "/temp"
 	const size_t device_len = strlen(data->device);
-	char *path = alloca(strlen(THERMAL_PATH) + device_len + 1);
+	char *path = alloca(strlen(THERMAL_PATH) + device_len + strlen(THERMAL_PATH_SUFFIX) + 1);
 	memcpy(path, THERMAL_PATH, strlen(THERMAL_PATH));
-	memcpy(path + strlen(THERMAL_PATH), data->device, device_len + 1);
+	memcpy(path + strlen(THERMAL_PATH), data->device, device_len);
+	memcpy(path + strlen(THERMAL_PATH) + device_len, THERMAL_PATH_SUFFIX, strlen(THERMAL_PATH_SUFFIX) + 1);
 	free(data->device);
 	data->device = NULL;
+#undef THERMAL_PATH_SUFFIX
 #undef THERMAL_PATH
 
-	data->thermal_dir_fd = open(path, O_PATH | O_DIRECTORY);
-	return data->thermal_dir_fd >= 0;
+	data->thermal_fd = open(path, O_RDONLY);
+	return data->thermal_fd >= 0;
 }
 
 static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 	free(data->format);
-	close(data->thermal_dir_fd);
+	close(data->thermal_fd);
 }
 
 // generaterd using command ./scripts/gen-format.py cf
-VPRINT_OPTS(cmd_cpu_temperature_data_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
+VPRINT_OPTS(cmd_cpu_temperature_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
 static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	struct cmd_cpu_temperature_data *data = (struct cmd_cpu_temperature_data *)_data;
 
 	int curr_value = -1;
 	{
-		int fd = openat(data->thermal_dir_fd, "temp", O_RDONLY);
-		if (likely(fd >= 0)) {
-			char buf[64];
-			ssize_t len = read(fd, buf, sizeof(buf) - 1);
-			if (likely(len > 0)) {
-				buf[len] = '\0';
-				curr_value = atoi(buf) / 1000;
-			}
+		char buf[64];
+		lseek(data->thermal_fd, 0, SEEK_SET);
+		ssize_t len = read(data->thermal_fd, buf, sizeof(buf) - 1);
+		if (likely(len > 0)) {
+			buf[len] = '\0';
+			curr_value = atoi(buf) / 1000;
 		}
-		close(fd);
 	}
 
 	unsigned res;
-	struct vprint ctx = {cmd_cpu_temperature_data_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
+	struct vprint ctx = {cmd_cpu_temperature_var_options, data->format, data->cached_output, data->cached_output + sizeof(data->cached_output)};
 	while ((res = vprint_walk(&ctx)) != 0) {
-		if (curr_value == -1)
+		if (unlikely(curr_value == -1))
 			vprint_strcat(&ctx, "???");
 		else {
 			int output = curr_value;
