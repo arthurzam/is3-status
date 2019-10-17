@@ -5,10 +5,8 @@ project('is3-status', 'c',
 
 sources = [
   'src/cmd_date.c',
-  'src/cmd_eth.c',
   'src/ini_parser.c',
   'src/main.c',
-  'src/networking.c',
   'src/vprint.c',
   'src/fdpoll.c',
   'src/handle_click_event.c'
@@ -44,13 +42,18 @@ if (get_option('disk-usage').enabled())
     sources += 'src/cmd_disk_usage.c'
 endif
 
-if (get_option('mpris').enabled())
-    needs_dbus = true
-    sources += 'src/cmd_mpris.c'
+if (get_option('eth').enabled())
+    sources += 'src/cmd_eth.c'
+    sources += 'src/networking.c'
 endif
 
 if (get_option('load').enabled())
     sources += 'src/cmd_load.c'
+endif
+
+if (get_option('mpris').enabled())
+    needs_dbus = true
+    sources += 'src/cmd_mpris.c'
 endif
 
 if (get_option('memory').enabled())

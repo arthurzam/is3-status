@@ -3,6 +3,7 @@ option('backlight', type: 'feature', value: 'auto', description: 'Enable Backlig
 option('battery', type: 'feature', value: 'auto', description: 'Enable Battery module')
 option('cpu-temperature', type: 'feature', value: 'auto', description: 'Enable CPU temperature module')
 option('disk-usage', type: 'feature', value: 'auto', description: 'Enable disk usage module')
+option('eth', type: 'feature', value: 'auto', description: 'Enable Ethernet IP module')
 option('load', type: 'feature', value: 'auto', description: 'Enable system load module')
 option('man-pages', type: 'feature', value: 'auto', description: 'Generate and install man pages')
 option('memory', type: 'feature', value: 'auto', description: 'Enable RAM memory module')
