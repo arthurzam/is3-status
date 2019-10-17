@@ -76,8 +76,7 @@ static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
 	int curr_value = -1;
 	{
 		char buf[64];
-		lseek(data->thermal_fd, 0, SEEK_SET);
-		ssize_t len = read(data->thermal_fd, buf, sizeof(buf) - 1);
+		ssize_t len = pread(data->thermal_fd, buf, sizeof(buf) - 1, 0);
 		if (likely(len > 0)) {
 			buf[len] = '\0';
 			curr_value = atoi(buf) / 1000;

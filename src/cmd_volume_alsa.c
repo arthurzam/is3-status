@@ -189,7 +189,6 @@ static void cmd_volume_alsa_cevent(struct cmd_data_base *_data, unsigned event, 
 		case CEVENT_MOUSE_WHEEL_UP:
 		case CEVENT_MOUSE_WHEEL_DOWN: {
 			long val;
-			snd_mixer_handle_events(data->mixer);
 			snd_mixer_selem_get_playback_volume(data->elem, 0, &val);
 
 			const long change = (data->wheel_step * data->volume_range + (100 / 2)) / 100;

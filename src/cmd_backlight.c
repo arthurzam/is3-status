@@ -41,8 +41,7 @@ struct cmd_backlight_data {
 
 static long cmd_backlight_read_value(int fd) {
 	char buf[64];
-	lseek(fd, 0, SEEK_SET);
-	ssize_t len = read(fd, buf, sizeof(buf) - 1);
+	ssize_t len = pread(fd, buf, sizeof(buf) - 1, 0);
 	if (unlikely(len <= 0))
 		return -1;
 	buf[len] = '\0';

@@ -53,8 +53,7 @@ static void cmd_load_recache(struct cmd_data_base *_data) {
 	struct cmd_load_data *data = (struct cmd_load_data *)_data;
 
 	char buf[65];
-	lseek(data->fd, 0, SEEK_SET);
-	ssize_t len = read(data->fd, buf, sizeof(buf) - 1);
+	ssize_t len = pread(data->fd, buf, sizeof(buf) - 1, 0);
 	if (likely(len > 0)) {
 		buf[len] = '\0';
 		const char *loadavgs[3] = {NULL, NULL, NULL};
