@@ -141,7 +141,7 @@ static void cmd_volume_alsa_destroy(struct cmd_data_base *_data) {
 	free(data->format_muted);
 }
 
-// generaterd using command ./scripts/gen-format.py vV
+// generated using command ./scripts/gen-format.py vV
 VPRINT_OPTS(cmd_volume_alsa_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
 static void cmd_volume_alsa_recache(struct cmd_data_base *_data) {

@@ -109,7 +109,7 @@ static void cmd_mpris_destroy(struct cmd_data_base *_data) {
 	sd_bus_unref(data->bus);
 }
 
-// generaterd using command ./scripts/gen-format.py AalpTt
+// generated using command ./scripts/gen-format.py AalpTt
 VPRINT_OPTS(cmd_mpris_var_options, {0x00000000, 0x00000000, 0x00100002, 0x00111002});
 
 static void cmd_mpris_recache(struct cmd_data_base *_data) {

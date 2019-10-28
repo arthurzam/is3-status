@@ -117,7 +117,7 @@ __attribute__((always_inline)) inline bool cmd_memory_file(struct memory_info_t 
 	return (found == ARRAY_SIZE(g_mem_opts));
 }
 
-// generaterd using command ./scripts/gen-format.py AaFfSstUu
+// generated using command ./scripts/gen-format.py AaFfSstUu
 VPRINT_OPTS(cmd_memory_var_options, {0x00000000, 0x00000000, 0x00280042, 0x00380042});
 
 static void cmd_memory_recache(struct cmd_data_base *_data) {

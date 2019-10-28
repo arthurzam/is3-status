@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 			if ((fdpoll_res > 0) || (run->data->interval > 0 && eventNum % run->data->interval == 0))
 				run->vtable->func_recache(run->data);
 
-			if (run != runs.runs_begin) // divider before all except first
+			if (run != runs.runs_begin) // separator before all except first
 				*(ptr++) = ',';
 			size_t len;
 #define OUTPUT_CONST_STR(str) memcpy(ptr, str, strlen(str)); ptr += strlen(str)

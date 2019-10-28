@@ -86,7 +86,7 @@ struct battery_info_t {
 	int status;
 
 	int remainingW;
-	int remainingAh; // temprorary and converted to watt
+	int remainingAh; // temporary and converted to watt
 	int present_rate;
 	int voltage;
 
@@ -179,7 +179,7 @@ __attribute__((always_inline)) inline bool cmd_battery_parse_file(int fd, struct
 	return true;
 }
 
-// generaterd using command ./scripts/gen-format.py bBt
+// generated using command ./scripts/gen-format.py bBt
 VPRINT_OPTS(cmd_battery_var_options, {0x00000000, 0x00000000, 0x00000004, 0x00100004});
 
 static void cmd_battery_recache(struct cmd_data_base *_data) {

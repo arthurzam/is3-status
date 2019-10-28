@@ -111,7 +111,9 @@ bool handle_netlink_read(void *arg) {
 	char buf[4096];
 	struct net_if_addrs *curr_if;
 	long status;
-	while ((status = recv(g_net_global.netlink_fd, buf, sizeof buf, MSG_DONTWAIT)) > 0 || errno == EINTR) {
+	while ((status = recv(g_net_global.netlink_fd, buf, sizeof buf, MSG_DONTWAIT)) > 0) {
+		if (errno == EINTR)
+			continue;
 		// DOCS: man 7 rtnetlink
 		for (struct nlmsghdr *h = (struct nlmsghdr *)buf; NLMSG_OK(h, (unsigned)status); h = NLMSG_NEXT(h, status)) {
 			bool isDel = false;

@@ -56,7 +56,7 @@ static void cmd_eth_destroy(struct cmd_data_base *_data) {
 	free(data->interface);
 }
 
-// generaterd using command ./scripts/gen-format.py Aa46
+// generated using command ./scripts/gen-format.py Aa46
 VPRINT_OPTS(cmd_eth_var_options, {0x00000000, 0x00500000, 0x00000002, 0x00000002});
 
 static void cmd_eth_recache(struct cmd_data_base *_data) {

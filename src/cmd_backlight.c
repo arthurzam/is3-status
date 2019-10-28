@@ -95,7 +95,7 @@ static void cmd_backlight_destroy(struct cmd_data_base *_data) {
 	close(data->backlight_fd);
 }
 
-// generaterd using command ./scripts/gen-format.py vV
+// generated using command ./scripts/gen-format.py vV
 VPRINT_OPTS(cmd_backlight_var_options, {0x00000000, 0x00000000, 0x00400000, 0x00400000});
 
 static void cmd_backlight_update_text(struct cmd_backlight_data *data, long value) {

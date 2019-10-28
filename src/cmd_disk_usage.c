@@ -52,7 +52,7 @@ static void cmd_disk_usage_destroy(struct cmd_data_base *_data) {
 	free(data->vfs_path);
 }
 
-// generaterd using command ./scripts/gen-format.py aAfFtuU
+// generated using command ./scripts/gen-format.py aAfFtuU
 VPRINT_OPTS(cmd_disk_usage_var_options, {0x00000000, 0x00000000, 0x00200042, 0x00300042});
 
 static void cmd_disk_usage_recache(struct cmd_data_base *_data) {

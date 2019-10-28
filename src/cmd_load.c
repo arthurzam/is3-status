@@ -46,7 +46,7 @@ static void cmd_load_destroy(struct cmd_data_base *_data) {
 	close(data->fd);
 }
 
-// generaterd using command ./scripts/gen-format.py 123
+// generated using command ./scripts/gen-format.py 123
 VPRINT_OPTS(cmd_load_var_options, {0x00000000, 0x000E0000, 0x00000000, 0x00000000});
 
 static void cmd_load_recache(struct cmd_data_base *_data) {

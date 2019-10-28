@@ -67,7 +67,7 @@ static void cmd_cpu_temperature_destroy(struct cmd_data_base *_data) {
 	close(data->thermal_fd);
 }
 
-// generaterd using command ./scripts/gen-format.py cf
+// generated using command ./scripts/gen-format.py cf
 VPRINT_OPTS(cmd_cpu_temperature_var_options, {0x00000000, 0x00000000, 0x00000000, 0x00000048});
 
 static void cmd_cpu_temperature_recache(struct cmd_data_base *_data) {
