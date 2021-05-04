@@ -80,8 +80,7 @@ static int cevent_string(void *ctx, const unsigned char *str, size_t len) {
 			return true;
 		default: return true;
 	}
-	free(*dst);
-	*dst = malloc(len + 1);
+	*dst = realloc(*dst, len + 1);
 	memcpy(*dst, str, len);
 	(*dst)[len] = '\0';
 	return true;

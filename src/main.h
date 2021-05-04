@@ -35,7 +35,7 @@ enum cmd_option_type {
 	OPT_TYPE_COLOR = 2, ///< color variable of type char[8]
 	/**
 	  * should be a long variable, but with special parsing for suffix:
-	  *  if using % suffix, the long would be a negetive number;
+	  *  if using % suffix, the long would be a negative number;
 	  *  otherwise the suffix should be a byte suffix (ex. MB, GiB) and would be positive
 	  */
 	OPT_TYPE_BYTE_THRESHOLD = 3,
